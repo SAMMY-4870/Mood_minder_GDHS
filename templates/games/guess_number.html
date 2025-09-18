@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Guess the Number · Games{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2 class="mb-3">🔢 Guess the Number</h2>
+    <p>I'm thinking of a number between 1 and 100.</p>
+    <form method="post" class="d-flex gap-2 mb-3">
+      <input class="form-control" type="number" name="guess" min="1" max="100" placeholder="Your guess" required>
+      <button class="btn btn-primary" name="action" value="guess">Guess</button>
+      <button class="btn btn-outline-secondary" name="action" value="reset">Reset</button>
+    </form>
+    {% if feedback %}
+      <div class="alert {{ 'alert-success' if won else 'alert-info' }}">{{ feedback }}</div>
+    {% endif %}
+    <div class="text-muted">Attempts: {{ attempts }}</div>
+    {% if stats %}
+      <hr>
+      <div class="small text-muted">
+        <div>Games Played: {{ stats.games_played or 0 }}</div>
+        <div>Wins: {{ stats.wins or 0 }}</div>
+        <div>Total Guesses: {{ stats.total_guesses or 0 }}</div>
+        <div>Best Attempts (lower is better): {{ stats.best_attempts or '-' }}</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+

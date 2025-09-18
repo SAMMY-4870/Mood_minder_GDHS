@@ -1,0 +1,127 @@
+/* Register page specific styles */
+.page-register {
+    min-height: 80vh;
+    padding: 3rem 0;
+    background: linear-gradient(135deg, rgba(32, 201, 151, 0.05), rgba(111, 66, 193, 0.05));
+}
+
+.register-card {
+    border-radius: 20px;
+    animation: slideUp 0.8s ease forwards;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.register-icon {
+    animation: bounce 2s infinite;
+}
+
+.register-icon span {
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+
+/* Form styling */
+.register-card .form-control {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1rem;
+}
+
+.register-card .form-control:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.15);
+    transform: translateY(-1px);
+}
+
+.register-card .form-label {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Button styling */
+.register-card .btn {
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.5rem;
+}
+
+.register-card .gradient-btn {
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    border: none;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.register-card .gradient-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(111, 66, 193, 0.3);
+}
+
+.register-card .gradient-btn:active {
+    transform: translateY(0);
+}
+
+/* Password toggle buttons */
+#togglePassword1, #togglePassword2 {
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+}
+
+/* Password match indicator */
+#passwordMatch {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#passwordMatch.match {
+    color: #198754;
+}
+
+#passwordMatch.no-match {
+    color: #dc3545;
+}
+
+/* Form text styling */
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Animations */
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .page-register {
+        padding: 1rem 0;
+    }
+    
+    .register-card .card-body {
+        padding: 2rem !important;
+    }
+}

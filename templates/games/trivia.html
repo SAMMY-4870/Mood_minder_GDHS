@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Trivia · Games{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h2 class="mb-3">🧠 Trivia</h2>
+    <p class="lead">Question: {{ question }}</p>
+    <form method="post" class="d-flex gap-2 mb-3">
+      <input class="form-control" name="answer" placeholder="Your answer" required>
+      <button class="btn btn-primary">Submit</button>
+    </form>
+    {% if feedback %}
+      <div class="alert alert-info">{{ feedback }}</div>
+    {% endif %}
+    {% if stats %}
+      <hr>
+      <div class="small text-muted">
+        <div>Answered: {{ stats.games_played or 0 }}</div>
+        <div>Correct: {{ stats.correct or 0 }}</div>
+        <div>Incorrect: {{ stats.incorrect or 0 }}</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+

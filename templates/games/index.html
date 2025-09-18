@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Games · Happy Quotes{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/games.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="games-container">
+  <div class="games-header text-center mb-5">
+    <h1 class="display-4 mb-3">🎮 Game Center</h1>
+    <p class="lead">Choose your favorite game and start playing!</p>
+  </div>
+  
+  <div class="games-grid">
+    <div class="game-card" data-game="candy-crash">
+      <div class="game-icon">🍭</div>
+      <h3>Candy Crash</h3>
+      <p>Match colorful candies and create explosive combinations!</p>
+      <button class="play-btn" onclick="startGame('candy-crash')">Play Now</button>
+    </div>
+    
+    <div class="game-card" data-game="lumosity">
+      <div class="game-icon">🧠</div>
+      <h3>Lumosity</h3>
+      <p>Train your brain with challenging puzzles and memory games!</p>
+      <button class="play-btn" onclick="startGame('lumosity')">Play Now</button>
+    </div>
+    
+    <div class="game-card" data-game="subway-surfers">
+      <div class="game-icon">🏃‍♂️</div>
+      <h3>Subway Surfers</h3>
+      <p>Run, jump, and dodge obstacles in this endless runner!</p>
+      <button class="play-btn" onclick="startGame('subway-surfers')">Play Now</button>
+    </div>
+    
+    <div class="game-card" data-game="funny-maze">
+      <div class="game-icon">😄</div>
+      <h3>Funny Maze</h3>
+      <p>Navigate through hilarious mazes with funny characters!</p>
+      <button class="play-btn" onclick="startGame('funny-maze')">Play Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Modal -->
+<div id="gameModal" class="game-modal">
+  <div class="game-modal-content">
+    <span class="close-btn" onclick="closeGame()">&times;</span>
+    <div id="gameArea"></div>
+  </div>
+</div>
+{% endblock %}
+
+

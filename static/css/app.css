@@ -1,0 +1,109 @@
+/* Global theme tweaks */
+:root {
+  --brand: #6f42c1;
+  --brand-2: #20c997;
+  --brand-3: #ff6b6b;
+  --brand-4: #feca57;
+}
+
+body {
+  background-color: #f8f9fb;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+/* Hero sections */
+.hero {
+  position: relative;
+  border-radius: .75rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(111,66,193,.15), rgba(32,201,151,.15));
+}
+
+.hero-img {
+  background-size: cover;
+  background-position: center;
+  min-height: 260px;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,.7), rgba(255,255,255,.15));
+}
+
+.hero-content {
+  position: relative;
+  padding: 3rem 2rem;
+}
+
+/* Login page */
+.page-login {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at top, rgba(111,66,193,.25), transparent 60%),
+              radial-gradient(ellipse at bottom, rgba(32,201,151,.25), transparent 60%);
+}
+
+.login-card {
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+/* Utilities */
+.gradient-btn {
+  background-image: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: #fff !important;
+  border: none;
+}
+.content-surface {
+  background: rgba(255,255,255,.8);
+  border-radius: .75rem;
+  padding: 1rem 1rem 2rem;
+}
+
+/* Animations */
+@keyframes floaty {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+.floaty { animation: floaty 6s ease-in-out infinite; }
+
+@keyframes pulseOutline {
+  0% { box-shadow: 0 0 0 0 rgba(111,66,193,.4); }
+  70% { box-shadow: 0 0 0 12px rgba(111,66,193,0); }
+  100% { box-shadow: 0 0 0 0 rgba(111,66,193,0); }
+}
+
+.pulse { animation: pulseOutline 2.2s ease-out infinite; }
+
+/* Rainbow bar */
+.rainbow-bar {
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2), var(--brand-3), var(--brand-4), var(--brand));
+  background-size: 300% 100%;
+  animation: moveGradient 8s linear infinite;
+}
+
+@keyframes moveGradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* Reveal on scroll */
+.reveal { opacity: 0; transform: translateY(12px); transition: all .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+
+
+.card.border-primary>.card-header {
+  border-bottom: 0;
+}
+
+

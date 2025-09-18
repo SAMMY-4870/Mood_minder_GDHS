@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Leaderboard · Games{% endblock %}
+{% block content %}
+<h2 class="mb-4">🏆 Leaderboard</h2>
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Guess the Number (by Wins)</h5>
+        <ol class="mb-0">
+          {% for row in lb_guess %}
+            <li>{{ row.email }} — {{ row.wins or 0 }} wins</li>
+          {% else %}
+            <li>No data yet.</li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Rock · Paper · Scissors (by Wins)</h5>
+        <ol class="mb-0">
+          {% for row in lb_rps %}
+            <li>{{ row.email }} — {{ row.wins or 0 }} wins</li>
+          {% else %}
+            <li>No data yet.</li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Trivia (by Correct)</h5>
+        <ol class="mb-0">
+          {% for row in lb_trivia %}
+            <li>{{ row.email }} — {{ row.correct or 0 }} correct</li>
+          {% else %}
+            <li>No data yet.</li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

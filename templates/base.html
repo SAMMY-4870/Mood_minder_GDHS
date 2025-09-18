@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Happy Quotes{% endblock %}</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Global CSS with cache-busting -->
+  <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+
+
+  <!-- Page Specific CSS -->
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="site-bg">
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-0 shadow">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">
+        <span class="me-2">😊</span>Happy Quotes
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('quotes') }}">
+              <span class="me-1">💭</span>Quotes
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('images') }}">
+              <span class="me-1">🖼️</span>Images
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('music') }}">
+              <span class="me-1">🎵</span>Music
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('games') }}">
+              <span class="me-1">🎮</span>Games
+            </a>
+          </li>
+          {% if user %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('upload') }}">
+              <span class="me-1">📤</span>Upload
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+        <ul class="navbar-nav">
+          {% if user %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="me-2">👤</span>
+                <span class="d-none d-md-inline">{{ user.first_name }}</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><h6 class="dropdown-header">Welcome, {{ user.first_name }}!</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('profile') }}">⚙️ Profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('activity') }}">📊 Activity & Reports</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('upload') }}">📤 Upload Content</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('games') }}">🎮 Play Games</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">🚪 Logout</a></li>
+              </ul>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="btn btn-outline-light me-2" href="{{ url_for('login') }}">
+                <span class="me-1">🔑</span>Login
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-light" href="{{ url_for('register') }}">
+                <span class="me-1">📝</span>Register
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="rainbow-bar"></div>
+
+  <main class="container-fluid content-surface reveal mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-3">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} mb-2">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Global JS with cache-busting -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+  <!-- Page Specific JS -->
+  {% block extra_js %}{% endblock %}
+
+  <!-- Simple Chatbot Widget -->
+  <div id="chatbot" class="chatbot d-none">
+    <div class="chatbot-header">Assistant <button id="chatbotClose" class="btn btn-sm btn-light">×</button></div>
+    <div id="chatbotMessages" class="chatbot-messages"></div>
+    <div class="chatbot-input">
+      <input id="chatbotText" class="form-control form-control-sm" placeholder="Ask me..."/>
+      <button id="chatbotSend" class="btn btn-primary btn-sm ms-2">Send</button>
+    </div>
+  </div>
+  <button id="chatbotToggle" class="btn btn-primary chatbot-toggle">💬</button>
+
+  <style>
+    .chatbot-toggle{position:fixed;right:16px;bottom:16px;border-radius:50%;width:48px;height:48px;z-index:1080}
+    .chatbot{position:fixed;right:16px;bottom:72px;width:300px;max-height:60vh;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden;z-index:1080}
+    .chatbot-header{background:var(--bs-primary);color:#fff;padding:.5rem .75rem;display:flex;justify-content:space-between;align-items:center}
+    .chatbot-messages{padding:.5rem;overflow:auto;flex:1}
+    .chatbot-input{display:flex;padding:.5rem;border-top:1px solid #eee}
+    .chat-msg{padding:.35rem .5rem;border-radius:.5rem;margin-bottom:.35rem;max-width:85%}
+    .chat-user{background:#e9f2ff;margin-left:auto}
+    .chat-bot{background:#f1f3f5}
+    @media (max-width:576px){.chatbot{right:8px;left:8px;width:auto}}
+  </style>
+  <script>
+    (function(){
+      const t=document.getElementById('chatbotToggle');
+      const w=document.getElementById('chatbot');
+      const close=document.getElementById('chatbotClose');
+      const send=document.getElementById('chatbotSend');
+      const input=document.getElementById('chatbotText');
+      const msgs=document.getElementById('chatbotMessages');
+      function addMsg(text, cls){
+        const div=document.createElement('div');
+        div.className='chat-msg '+cls;
+        div.textContent=text;
+        msgs.appendChild(div);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+      function sendMsg(){
+        const v=(input.value||'').trim();
+        if(!v) return;
+        addMsg(v,'chat-user');
+        input.value='';
+        fetch('/api/chat',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:v})})
+          .then(r=>r.json()).then(d=>{
+            const text = (d && d.reply) ? d.reply : 'Sorry, I did not understand that.';
+            addMsg(text,'chat-bot');
+            if(d && d.disclaimer){ addMsg(d.disclaimer,'chat-bot'); }
+          }).catch(()=> addMsg('Sorry, something went wrong.','chat-bot'));
+      }
+      t&&t.addEventListener('click',()=>{w.classList.toggle('d-none'); if(!w.classList.contains('d-none')) input.focus();});
+      close&&close.addEventListener('click',()=>w.classList.add('d-none'));
+      send&&send.addEventListener('click',sendMsg);
+      input&&input.addEventListener('keydown',e=>{if(e.key==='Enter'){sendMsg();}});
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+cd C:\Project\happy_quotes_ml_project
+
+
+
+streamlit run app.py
+
+
+streamlit run src/app.py
+
+
+
+cd C:\Project\happy_quotes_ml_project
+streamlit run app.py
+
+
+
+
+cd C:\Project\happy_quotes_ml_project
+streamlit run user_dashboard.py
+
+python -m pip install "pymongo[srv]"
+
+mongodb+srv://Samarth_90:Samarth@9090@moodminder.dci9zcf.mongodb.net/?retryWrites=true&w=majority&appName=MoodMinder

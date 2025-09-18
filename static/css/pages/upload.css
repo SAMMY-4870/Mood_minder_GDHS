@@ -1,0 +1,193 @@
+/* Upload page specific styles */
+.upload-page {
+    padding: 2rem 0;
+}
+
+.upload-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.upload-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+}
+
+.upload-card .card-header {
+    border-radius: 15px 15px 0 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.upload-card .card-body {
+    padding: 2rem;
+}
+
+/* Form styling */
+.upload-card .form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1rem;
+}
+
+.upload-card .form-control:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.15);
+    transform: translateY(-1px);
+}
+
+.upload-card .form-label {
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+/* Button styling */
+.upload-card .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.upload-card .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* File input styling */
+.upload-card input[type="file"] {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.upload-card input[type="file"]:hover {
+    border-color: var(--brand);
+    background: rgba(111, 66, 193, 0.05);
+}
+
+.upload-card input[type="file"]:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.15);
+}
+
+/* Image preview */
+.upload-preview {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.upload-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Form text styling */
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* Guidelines section */
+.border-info {
+    border-radius: 15px;
+    border: 2px solid #0dcaf0 !important;
+}
+
+.border-info .card-header {
+    border-radius: 13px 13px 0 0;
+    background: linear-gradient(135deg, #0dcaf0, #0aa2c0) !important;
+}
+
+.border-info .card-body {
+    padding: 2rem;
+}
+
+.border-info h6 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.border-info ul li {
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.upload-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.upload-card:nth-child(1) { animation-delay: 0.1s; }
+.upload-card:nth-child(2) { animation-delay: 0.2s; }
+.upload-card:nth-child(3) { animation-delay: 0.3s; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .upload-page {
+        padding: 1rem 0;
+    }
+    
+    .upload-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .border-info .card-body {
+        padding: 1.5rem;
+    }
+}
+
+/* Loading states */
+.upload-card .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.upload-card .btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.upload-card .btn.loading::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

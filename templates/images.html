@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Images · Happy Quotes{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/images.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/images.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center images-page">
+  <div class="col-md-10 col-lg-9">
+    <h2 class="mb-3 text-center">🖼️ Random Images</h2>
+    <div class="d-flex justify-content-center gap-2 mb-3">
+      <button id="loadImages" class="btn btn-primary">Load random grid</button>
+      <button id="refreshImages" class="btn btn-outline-secondary">Refresh</button>
+    </div>
+    <div id="imagesGrid" class="row g-2"></div>
+  </div>
+
+  <!-- Image Preview Modal -->
+  <div class="modal fade modal-image" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">Image</h5>
+          <div class="ms-auto d-flex gap-2">
+            <a id="downloadImage" class="btn btn-success btn-sm" download>Download</a>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+        <div class="modal-body p-0 text-center bg-black">
+          <img id="modalImage" class="w-100" alt="preview" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

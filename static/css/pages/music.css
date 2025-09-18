@@ -1,0 +1,120 @@
+/* music.css */
+
+/* Page styling */
+body {
+    background: linear-gradient(135deg, #f3e5f5, #ce93d8);
+    font-family: 'Arial', sans-serif;
+    padding: 40px 20px;
+    min-height: 100vh;
+    animation: fadeIn 1s ease forwards;
+}
+
+/* Container styling */
+.music-container {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: slideUp 1s ease forwards;
+}
+
+/* Section cards */
+.card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Titles */
+.card-title {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: #6a1b9a;
+    text-align: center;
+}
+
+/* Form elements */
+.form-label {
+    font-weight: bold;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #6a1b9a;
+    box-shadow: 0 0 8px rgba(106, 27, 154, 0.3);
+    outline: none;
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-primary {
+    background-color: #6a1b9a;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #4a148c;
+    transform: scale(1.05);
+}
+
+.btn-secondary {
+    background-color: #ab47bc;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #8e24aa;
+    transform: scale(1.05);
+}
+
+/* File input styling */
+input[type="file"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

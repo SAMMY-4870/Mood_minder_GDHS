@@ -1,0 +1,123 @@
+/* quotes.css */
+
+/* Page styling */
+body {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    font-family: 'Arial', sans-serif;
+    padding: 40px 20px;
+    min-height: 100vh;
+    animation: fadeIn 1s ease forwards;
+}
+
+/* Container styling */
+.quotes-container {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: slideUp 1s ease forwards;
+}
+
+/* Quote cards */
+.quote-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.quote-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Quote text */
+.quote-text {
+    font-size: 1.2rem;
+    color: #6d4c41;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+/* Author styling */
+.quote-author {
+    text-align: right;
+    font-style: italic;
+    color: #8d6e63;
+}
+
+/* Form styling */
+form {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    transition: transform 0.3s ease;
+}
+
+form:hover {
+    transform: translateY(-3px);
+}
+
+.form-label {
+    font-weight: bold;
+    color: #5d4037;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #8d6e63;
+    box-shadow: 0 0 8px rgba(141, 110, 99, 0.3);
+    outline: none;
+}
+
+/* Button styling */
+.btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-success {
+    background-color: #8d6e63;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #6d4c41;
+    transform: scale(1.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

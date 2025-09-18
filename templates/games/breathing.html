@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Breathing Exercise · Games{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 text-center">
+    <h2 class="mb-3">🌬️ Breathing Exercise</h2>
+    <p>Follow the 4-4-4-4 box breathing: Inhale 4s, hold 4s, exhale 4s, hold 4s.</p>
+    <div class="border rounded p-4 mb-3">
+      <div id="phase" class="fs-4 mb-2">Get Ready</div>
+      <div id="counter" class="display-5">4</div>
+    </div>
+    <button class="btn btn-primary" id="start">Start</button>
+  </div>
+</div>
+<script>
+  const phases = ["Inhale", "Hold", "Exhale", "Hold"]; // 4 seconds each
+  let running = false;
+  document.getElementById('start').addEventListener('click', () => {
+    if (running) return; running = true;
+    let phaseIdx = 0;
+    function runPhase() {
+      let t = 4;
+      document.getElementById('phase').textContent = phases[phaseIdx % phases.length];
+      document.getElementById('counter').textContent = t;
+      const timer = setInterval(() => {
+        t -= 1;
+        document.getElementById('counter').textContent = t;
+        if (t <= 0) {
+          clearInterval(timer);
+          phaseIdx += 1;
+          runPhase();
+        }
+      }, 1000);
+    }
+    runPhase();
+  });
+</script>
+{% endblock %}
+
+

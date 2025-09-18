@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Rock · Paper · Scissors · Games{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 text-center">
+    <h2 class="mb-3">✊ ✋ ✌️ Rock · Paper · Scissors</h2>
+    <form method="post" class="d-flex justify-content-center gap-2 mb-3">
+      <button class="btn btn-outline-primary" name="choice" value="rock">Rock</button>
+      <button class="btn btn-outline-primary" name="choice" value="paper">Paper</button>
+      <button class="btn btn-outline-primary" name="choice" value="scissors">Scissors</button>
+    </form>
+    {% if player %}
+      <div class="alert alert-info">You chose <strong>{{ player }}</strong>. Computer chose <strong>{{ computer }}</strong>.</div>
+      <div class="alert alert-{{ 'success' if 'win' in result|lower else ('secondary' if 'draw' in result|lower else 'danger') }}">{{ result }}</div>
+    {% endif %}
+    {% if stats %}
+      <hr>
+      <div class="small text-muted">
+        <div>Games Played: {{ stats.games_played or 0 }}</div>
+        <div>Wins: {{ stats.wins or 0 }}</div>
+        <div>Draws: {{ stats.draws or 0 }}</div>
+        <div>Losses: {{ stats.losses or 0 }}</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+

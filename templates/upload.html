@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload · Happy Quotes{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/upload.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/upload.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="upload-page">
+  <div class="text-center mb-5">
+    <h2 class="display-6 fw-bold text-primary mb-3">
+      <span class="me-2">📤</span>Upload New Content
+    </h2>
+    <p class="lead text-muted">Share your favorite quotes, images, and music with the community!</p>
+  </div>
+
+  <div class="row g-4">
+    
+    <!-- Add Quote Form -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card h-100 upload-card shadow-sm border-0">
+        <div class="card-header bg-success text-white text-center">
+          <h5 class="card-title mb-0">
+            <span class="me-2">💭</span>Add Quote
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="post" id="quoteForm">
+            <input type="hidden" name="form_name" value="quote">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <span class="me-1">📝</span>Quote Text
+              </label>
+              <textarea class="form-control" name="quote" rows="4" 
+                        placeholder="Enter your inspiring quote..." required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <span class="me-1">✍️</span>Author
+              </label>
+              <input class="form-control" name="author" 
+                     placeholder="Quote author (optional)" value="Anonymous">
+            </div>
+            <button type="submit" class="btn btn-success w-100">
+              <span class="me-2">💾</span>Save Quote
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Image Form -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card h-100 upload-card shadow-sm border-0">
+        <div class="card-header bg-primary text-white text-center">
+          <h5 class="card-title mb-0">
+            <span class="me-2">🖼️</span>Upload Image
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" id="imageForm">
+            <input type="hidden" name="form_name" value="image">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <span class="me-1">📁</span>Select Image
+              </label>
+              <input class="form-control" type="file" name="image_file" 
+                     accept=".png,.jpg,.jpeg,.gif,.webp" required>
+              <div class="form-text">Supported: PNG, JPG, JPEG, GIF, WebP</div>
+            </div>
+            <div class="mb-3">
+              <div class="upload-preview" id="imagePreview" style="display: none;">
+                <img id="previewImg" class="img-fluid rounded" alt="Preview">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+              <span class="me-2">📤</span>Upload Image
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Song Form -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card h-100 upload-card shadow-sm border-0">
+        <div class="card-header bg-warning text-dark text-center">
+          <h5 class="card-title mb-0">
+            <span class="me-2">🎵</span>Upload Music
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" id="songForm">
+            <input type="hidden" name="form_name" value="song">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <span class="me-1">🎶</span>Song Title
+              </label>
+              <input class="form-control" name="title" 
+                     placeholder="Enter song title" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <span class="me-1">🎤</span>Artist
+              </label>
+              <input class="form-control" name="artist" 
+                     placeholder="Enter artist name" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                <span class="me-1">📁</span>Select Audio File
+              </label>
+              <input class="form-control" type="file" name="song_file" 
+                     accept=".mp3,.wav,.ogg,.m4a" required>
+              <div class="form-text">Supported: MP3, WAV, OGG, M4A</div>
+            </div>
+            <button type="submit" class="btn btn-warning w-100">
+              <span class="me-2">🎵</span>Upload Song
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Upload Guidelines -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">
+            <span class="me-2">📋</span>Upload Guidelines
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <h6 class="text-success">✅ Do's</h6>
+              <ul class="list-unstyled">
+                <li>• Share inspiring and positive content</li>
+                <li>• Use appropriate file formats</li>
+                <li>• Give proper attribution to authors</li>
+                <li>• Keep file sizes reasonable</li>
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <h6 class="text-danger">❌ Don'ts</h6>
+              <ul class="list-unstyled">
+                <li>• Upload copyrighted material</li>
+                <li>• Share inappropriate content</li>
+                <li>• Upload very large files</li>
+                <li>• Spam or duplicate content</li>
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <h6 class="text-info">💡 Tips</h6>
+              <ul class="list-unstyled">
+                <li>• High-quality images work best</li>
+                <li>• Clear audio files preferred</li>
+                <li>• Meaningful quotes inspire others</li>
+                <li>• Check your uploads before sharing</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Home · Happy Quotes{% endblock %}
+
+{% block extra_css %}
+<!-- Home page CSS -->
+<link href="{{ url_for('static', filename='css/pages/home.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<!-- Home page JS -->
+<script src="{{ url_for('static', filename='js/pages/home.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="hero mb-4 reveal floaty">
+  <div class="hero-img" style="background-image:none;"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content text-center">
+    <h1 class="display-6 mb-2">Find your happy moment</h1>
+    <h1 class="display-6 mb-2">      Mood Minder</h1>
+
+    {% if user %}
+      <p class="lead">Welcome, {{ user.first_name }}! Here are some suggestions tailored for you.</p>
+    {% else %}
+      <p class="lead">Quotes, images, music, and mini games to lift your mood.</p>
+      
+    {% endif %}
+
+    <div class="d-flex justify-content-center gap-2">
+      <a class="btn gradient-btn pulse" href="{{ url_for('quotes') }}">Get a Quote</a>
+      <a class="btn btn-outline-secondary pulse" href="{{ url_for('games') }}">Play a Game</a>
+    </div>
+  </div>
+</div>
+
+{% if user and suggestions|length %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card border-primary">
+      <div class="card-header bg-primary text-white">Recommended for you</div>
+      <div class="card-body">
+        <ul class="mb-0">
+          {% for s in suggestions %}
+            <li class="mb-2"><a href="{{ s.url }}">{{ s.text }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 text-center mt-3">
+    <a class="btn btn-outline-secondary" href="{{ url_for('games') }}">Or relax with a quick game</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

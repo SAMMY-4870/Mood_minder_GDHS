@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Register · Happy Quotes{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/register.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/register.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-register">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card register-card shadow-lg border-0">
+        <div class="card-body p-5">
+          <div class="text-center mb-4">
+            <div class="register-icon mb-3">
+              <span class="display-4">📝</span>
+            </div>
+            <h2 class="h3 mb-2 fw-bold text-primary">Create Your Account</h2>
+            <p class="text-muted">Join us and start your happy journey!</p>
+          </div>
+
+          <form method="post" id="registerForm">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="first_name" class="form-label fw-semibold">
+                  <span class="me-1">👤</span>First Name
+                </label>
+                <input id="first_name" name="first_name" class="form-control form-control-lg" 
+                       placeholder="Enter first name" required autocomplete="given-name">
+              </div>
+              <div class="col-md-6">
+                <label for="last_name" class="form-label fw-semibold">
+                  <span class="me-1">👤</span>Last Name
+                </label>
+                <input id="last_name" name="last_name" class="form-control form-control-lg" 
+                       placeholder="Enter last name" required autocomplete="family-name">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label fw-semibold">
+                <span class="me-1">📧</span>Email Address
+              </label>
+              <input id="email" name="email" class="form-control form-control-lg" type="email" 
+                     placeholder="Enter your email" required autocomplete="email">
+            </div>
+
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label for="password" class="form-label fw-semibold">
+                  <span class="me-1">🔒</span>Password
+                </label>
+                <div class="input-group">
+                  <input id="password" name="password" class="form-control form-control-lg" type="password" 
+                         placeholder="Create password" required autocomplete="new-password">
+                  <button class="btn btn-outline-secondary" type="button" id="togglePassword1">
+                    <span id="toggleIcon1">👁️</span>
+                  </button>
+                </div>
+                <div class="form-text">Minimum 6 characters</div>
+              </div>
+              <div class="col-md-6">
+                <label for="confirm_password" class="form-label fw-semibold">
+                  <span class="me-1">🔒</span>Confirm Password
+                </label>
+                <div class="input-group">
+                  <input id="confirm_password" name="confirm_password" class="form-control form-control-lg" type="password" 
+                         placeholder="Confirm password" required autocomplete="new-password">
+                  <button class="btn btn-outline-secondary" type="button" id="togglePassword2">
+                    <span id="toggleIcon2">👁️</span>
+                  </button>
+                </div>
+                <div id="passwordMatch" class="form-text"></div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 mb-3">
+              <button type="submit" class="btn btn-primary btn-lg gradient-btn" id="submitBtn">
+                <span class="me-2">🚀</span>Create Account
+              </button>
+            </div>
+
+            <div class="text-center">
+              <p class="text-muted mb-2">Already have an account?</p>
+              <a class="btn btn-outline-primary" href="{{ url_for('login') }}">
+                <span class="me-1">🔑</span>Sign In
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

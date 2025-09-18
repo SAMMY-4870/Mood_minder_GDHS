@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Music · Happy Quotes{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/music.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/music.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center music-page">
+  <div class="col-md-10 col-lg-8">
+    <h2 class="mb-3 text-center">🎶 Happy Songs</h2>
+    <div class="d-flex justify-content-center gap-2 mb-3">
+      <button id="loadSongs" class="btn btn-primary">Load random</button>
+      <button id="prevSong" class="btn btn-outline-secondary">Prev</button>
+      <button id="nextSong" class="btn btn-outline-secondary">Next</button>
+      <button id="stopSong" class="btn btn-outline-danger">Stop</button>
+      <a id="downloadSong" class="btn btn-outline-success" download>Download</a>
+    </div>
+    <div id="nowPlaying" class="text-center mb-2"></div>
+    <audio id="player" controls class="w-100"></audio>
+    <ul id="playlist" class="list-group mt-3"></ul>
+  </div>
+</div>
+{% endblock %}

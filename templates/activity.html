@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Activity & Reports · Happy Quotes{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Activity & Reports</h3>
+    <div class="btn-group">
+      <a class="btn btn-outline-primary" href="{{ url_for('download_weekly') }}">Download weekly CSV</a>
+      <a class="btn btn-outline-primary" href="{{ url_for('download_monthly') }}">Download monthly CSV</a>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Weekly summary</div>
+      <ul class="list-group list-group-flush">
+        {% for row in weekly %}
+          <li class="list-group-item d-flex justify-content-between"><span>{{ row._id }}</span><span class="badge text-bg-primary">{{ row.count }}</span></li>
+        {% else %}
+          <li class="list-group-item">No activity yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Monthly summary</div>
+      <ul class="list-group list-group-flush">
+        {% for row in monthly %}
+          <li class="list-group-item d-flex justify-content-between"><span>{{ row._id }}</span><span class="badge text-bg-secondary">{{ row.count }}</span></li>
+        {% else %}
+          <li class="list-group-item">No activity yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">Recent activity</div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Time</th><th>Action</th><th>Details</th></tr></thead>
+          <tbody>
+            {% for r in recent %}
+              <tr>
+                <td>{{ r.timestamp }}</td>
+                <td>{{ r.action }}</td>
+                <td>{{ r.details }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3">No recent events.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
