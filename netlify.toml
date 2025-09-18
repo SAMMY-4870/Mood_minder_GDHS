@@ -1,0 +1,9 @@
+[build]
+  command = "echo 'Netlify build - frontend served from static'"
+  publish = "static"
+
+# Single-page app fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
