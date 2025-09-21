@@ -49,6 +49,31 @@
           </li>
           {% if user %}
           <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('mood_assessment') }}">
+              <span class="me-1">🧠</span>Mood Check
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('wellness_center') }}">
+              <span class="me-1">🏥</span>Wellness
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('fitness_tracker') }}">
+              <span class="me-1">💪</span>Tracker
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('daily_challenges') }}">
+              <span class="me-1">🏆</span>Challenges
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('mental_health_guidance') }}">
+              <span class="me-1">💡</span>Guidance
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="{{ url_for('upload') }}">
               <span class="me-1">📤</span>Upload
             </a>

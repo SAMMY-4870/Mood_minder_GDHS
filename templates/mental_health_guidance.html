@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+{% block title %}Mental Health Guidance · Mental Health App{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+<style>
+.guidance-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.guidance-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+}
+
+.guidance-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.guidance-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.condition-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #6f42c1;
+    transition: all 0.3s ease;
+}
+
+.condition-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.condition-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.condition-icon {
+    font-size: 2rem;
+    margin-right: 15px;
+}
+
+.condition-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.condition-description {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.guidance-section {
+    margin-bottom: 25px;
+}
+
+.guidance-section h3 {
+    color: #6f42c1;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+}
+
+.guidance-section h3 .icon {
+    margin-right: 10px;
+    font-size: 1.3rem;
+}
+
+.guidance-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.guidance-list li {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border-left: 4px solid #6f42c1;
+    transition: all 0.3s ease;
+}
+
+.guidance-list li:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.warning-section {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.warning-section h3 {
+    color: #856404;
+    margin-bottom: 15px;
+}
+
+.warning-list {
+    color: #856404;
+}
+
+.resource-section {
+    background: #e3f2fd;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.resource-section h3 {
+    color: #1976d2;
+    margin-bottom: 15px;
+}
+
+.resource-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.resource-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.resource-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.resource-item h4 {
+    color: #1976d2;
+    margin-bottom: 8px;
+}
+
+.resource-item p {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.emergency-section {
+    background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+    text-align: center;
+}
+
+.emergency-section h2 {
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+}
+
+.emergency-section p {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.emergency-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.emergency-btn {
+    background: white;
+    color: #ff6b6b;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.emergency-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    color: #ff6b6b;
+    text-decoration: none;
+}
+
+.game-recommendations {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+}
+
+.game-recommendations h3 {
+    color: #6f42c1;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.game-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.game-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.game-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.game-description {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .guidance-container {
+        padding: 10px;
+    }
+    
+    .guidance-header h1 {
+        font-size: 2rem;
+    }
+    
+    .emergency-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .resource-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guidance-container">
+    <div class="guidance-header">
+        <h1>🧠 Mental Health Guidance</h1>
+        <p>Comprehensive support and resources for your mental health journey</p>
+    </div>
+    
+    <!-- Emergency Section -->
+    <div class="emergency-section">
+        <h2>🚨 Crisis Support</h2>
+        <p>If you're in immediate danger or having thoughts of self-harm, please reach out for help now.</p>
+        <div class="emergency-buttons">
+            <a href="tel:988" class="emergency-btn">📞 Call 988 (Suicide & Crisis Lifeline)</a>
+            <a href="sms:741741&body=HOME" class="emergency-btn">💬 Text HOME to 741741</a>
+            <a href="tel:911" class="emergency-btn">🚑 Call 911</a>
+        </div>
+    </div>
+    
+    <!-- Mental Health Conditions -->
+    <div id="conditionsContainer">
+        <!-- Conditions will be loaded dynamically -->
+    </div>
+    
+    <!-- Game Recommendations -->
+    <div class="game-recommendations">
+        <h3>🎮 Therapeutic Games</h3>
+        <p style="text-align: center; color: #666; margin-bottom: 25px;">
+            These games are designed to help improve your mental health and well-being
+        </p>
+        <div class="game-grid">
+            <div class="game-card" onclick="playGame('breathing')">
+                <div class="game-icon">🌬️</div>
+                <div class="game-name">Breathing Exercise</div>
+                <div class="game-description">Reduce stress and anxiety with guided breathing</div>
+            </div>
+            <div class="game-card" onclick="playGame('memory')">
+                <div class="game-icon">🧠</div>
+                <div class="game-name">Memory Match</div>
+                <div class="game-description">Improve focus and concentration</div>
+            </div>
+            <div class="game-card" onclick="playGame('reaction')">
+                <div class="game-icon">⚡</div>
+                <div class="game-name">Reaction Time</div>
+                <div class="game-description">Test and improve your reaction speed</div>
+            </div>
+            <div class="game-card" onclick="playGame('puzzle')">
+                <div class="game-icon">🧩</div>
+                <div class="game-name">Stress Puzzle</div>
+                <div class="game-description">Calm your mind with relaxing puzzles</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- General Resources -->
+    <div class="resource-section">
+        <h3>📚 Additional Resources</h3>
+        <div class="resource-list">
+            <div class="resource-item">
+                <h4>National Alliance on Mental Illness (NAMI)</h4>
+                <p>Support groups, education, and advocacy for mental health</p>
+            </div>
+            <div class="resource-item">
+                <h4>Mental Health America</h4>
+                <p>Screening tools, resources, and community support</p>
+            </div>
+            <div class="resource-item">
+                <h4>Psychology Today</h4>
+                <p>Find therapists and mental health professionals</p>
+            </div>
+            <div class="resource-item">
+                <h4>Headspace</h4>
+                <p>Meditation and mindfulness app</p>
+            </div>
+            <div class="resource-item">
+                <h4>Calm</h4>
+                <p>Sleep stories, meditations, and relaxation</p>
+            </div>
+            <div class="resource-item">
+                <h4>BetterHelp</h4>
+                <p>Online therapy and counseling services</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load mental health conditions and guidance
+document.addEventListener('DOMContentLoaded', function() {
+    loadMentalHealthGuidance();
+});
+
+function loadMentalHealthGuidance() {
+    // Get user's recent assessment data
+    fetch('/api/user-assessment-history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.assessments.length > 0) {
+                const latestAssessment = data.assessments[0];
+                displayPersonalizedGuidance(latestAssessment.analysis);
+            } else {
+                displayGeneralGuidance();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading guidance:', error);
+            displayGeneralGuidance();
+        });
+}
+
+function displayPersonalizedGuidance(analysis) {
+    const container = document.getElementById('conditionsContainer');
+    let html = '';
+    
+    // Show overall mood
+    html += `
+        <div class="condition-card">
+            <div class="condition-title">
+                <div class="condition-icon">${analysis.icon || '🧠'}</div>
+                <div class="condition-name">Your Current Mental Health Status</div>
+            </div>
+            <div class="condition-description">
+                ${analysis.description}
+            </div>
+            <div class="guidance-section">
+                <h3><span class="icon">💡</span>Key Recommendations</h3>
+                <ul class="guidance-list">
+                    ${analysis.recommendations.slice(0, 5).map(rec => `<li>${rec}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    // Show detected conditions
+    if (analysis.detected_conditions && Object.keys(analysis.detected_conditions).length > 0) {
+        for (const [condition, score] of Object.entries(analysis.detected_conditions)) {
+            html += await getConditionGuidance(condition, score);
+        }
+    }
+    
+    container.innerHTML = html;
+}
+
+async function getConditionGuidance(condition, score) {
+    try {
+        const response = await fetch('/api/mental-health-guidance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ condition: condition })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            return createConditionCard(condition, score, data.guidance);
+        }
+    } catch (error) {
+        console.error('Error getting condition guidance:', error);
+    }
+    
+    return createConditionCard(condition, score, null);
+}
+
+function createConditionCard(condition, score, guidance) {
+    const conditionInfo = {
+        'depression': { name: 'Depression', icon: '💙', color: '#6f42c1' },
+        'anxiety': { name: 'Anxiety', icon: '😰', color: '#ff6b6b' },
+        'bipolar': { name: 'Bipolar Disorder', icon: '🌊', color: '#feca57' },
+        'ptsd': { name: 'PTSD', icon: '🛡️', color: '#ff9ff3' },
+        'ocd': { name: 'OCD', icon: '🔄', color: '#54a0ff' },
+        'adhd': { name: 'ADHD', icon: '⚡', color: '#5f27cd' }
+    };
+    
+    const info = conditionInfo[condition] || { name: condition, icon: '⚠️', color: '#6f42c1' };
+    
+    let html = `
+        <div class="condition-card" style="border-left-color: ${info.color}">
+            <div class="condition-title">
+                <div class="condition-icon">${info.icon}</div>
+                <div class="condition-name">${info.name} (${Math.round(score * 100)}% match)</div>
+            </div>
+    `;
+    
+    if (guidance) {
+        html += `
+            <div class="guidance-section">
+                <h3><span class="icon">⚡</span>Immediate Actions</h3>
+                <ul class="guidance-list">
+                    ${guidance.immediate_actions.map(action => `<li>${action}</li>`).join('')}
+                </ul>
+            </div>
+            
+            <div class="guidance-section">
+                <h3><span class="icon">🎯</span>Long-term Strategies</h3>
+                <ul class="guidance-list">
+                    ${guidance.long_term_strategies.map(strategy => `<li>${strategy}</li>`).join('')}
+                </ul>
+            </div>
+            
+            <div class="warning-section">
+                <h3>⚠️ Warning Signs to Watch For</h3>
+                <ul class="warning-list">
+                    ${guidance.warning_signs.map(sign => `<li>${sign}</li>`).join('')}
+                </ul>
+            </div>
+            
+            <div class="resource-section">
+                <h3>📞 Resources & Support</h3>
+                <ul class="guidance-list">
+                    ${guidance.resources.map(resource => `<li>${resource}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="condition-description">
+                Please consult with a mental health professional for personalized guidance regarding ${info.name}.
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+function displayGeneralGuidance() {
+    const container = document.getElementById('conditionsContainer');
+    container.innerHTML = `
+        <div class="condition-card">
+            <div class="condition-title">
+                <div class="condition-icon">🧠</div>
+                <div class="condition-name">General Mental Health Tips</div>
+            </div>
+            <div class="condition-description">
+                Here are some general strategies to maintain good mental health:
+            </div>
+            <div class="guidance-section">
+                <h3><span class="icon">💡</span>Daily Practices</h3>
+                <ul class="guidance-list">
+                    <li>Maintain a regular sleep schedule</li>
+                    <li>Eat a balanced diet</li>
+                    <li>Exercise regularly</li>
+                    <li>Practice mindfulness or meditation</li>
+                    <li>Stay connected with friends and family</li>
+                </ul>
+            </div>
+            <div class="guidance-section">
+                <h3><span class="icon">🎯</span>When to Seek Help</h3>
+                <ul class="guidance-list">
+                    <li>Persistent feelings of sadness or hopelessness</li>
+                    <li>Excessive worry or anxiety</li>
+                    <li>Changes in sleep or appetite</li>
+                    <li>Difficulty concentrating or making decisions</li>
+                    <li>Thoughts of self-harm or suicide</li>
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+function playGame(gameType) {
+    window.location.href = `/games/${gameType}`;
+}
+</script>
+{% endblock %}

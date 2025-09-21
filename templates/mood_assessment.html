@@ -1,0 +1,1192 @@
+{% extends 'base.html' %}
+{% block title %}Mood Assessment · Mental Health App{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+<style>
+.assessment-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.assessment-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+}
+
+.assessment-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.assessment-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.question-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #6f42c1;
+    transition: all 0.3s ease;
+}
+
+.question-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.question-number {
+    display: inline-block;
+    background: #6f42c1;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.question-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.options-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.option-button {
+    padding: 15px 20px;
+    border: 2px solid #e9ecef;
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-weight: 500;
+    color: #555;
+}
+
+.option-button:hover {
+    border-color: #6f42c1;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+}
+
+.option-button.selected {
+    border-color: #6f42c1;
+    background: #6f42c1;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.3);
+}
+
+.progress-container {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    text-align: center;
+    font-weight: 600;
+    color: #6f42c1;
+}
+
+.assessment-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-assessment {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.results-container {
+    display: none;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    margin-top: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.mood-result {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.mood-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+}
+
+.mood-category {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.mood-score {
+    font-size: 1.5rem;
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+.mood-description {
+    font-size: 1.1rem;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.recommendations {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.recommendations h3 {
+    color: #6f42c1;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+}
+
+.recommendation-item {
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border-left: 4px solid #6f42c1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.insights {
+    background: #e3f2fd;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.insights h3 {
+    color: #1976d2;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+}
+
+.insight-item {
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border-left: 4px solid #1976d2;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.category-scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.category-score {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-top: 4px solid #6f42c1;
+}
+
+.category-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+    text-transform: capitalize;
+}
+
+.category-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #6f42c1;
+}
+
+.quick-assessment {
+    background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.quick-assessment h3 {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.quick-assessment p {
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.btn-quick {
+    background: white;
+    color: #ff6b6b;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-quick:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close-btn {
+    font-size: 2rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.close-btn:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.quick-progress {
+    margin-bottom: 30px;
+}
+
+.modal-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.quick-question {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-left: 5px solid #6f42c1;
+}
+
+.quick-question h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.quick-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.quick-option {
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.quick-option:hover {
+    border-color: #6f42c1;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+}
+
+.quick-option.selected {
+    border-color: #6f42c1;
+    background: #6f42c1;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.3);
+}
+
+.mental-health-results {
+    background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.mental-health-results h3 {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.condition-detected {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    color: #856404;
+}
+
+.condition-detected h4 {
+    margin: 0 0 10px 0;
+    color: #856404;
+}
+
+.recommended-games {
+    background: #e3f2fd;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.recommended-games h4 {
+    color: #1976d2;
+    margin-bottom: 15px;
+}
+
+.game-recommendations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.game-tag {
+    background: #1976d2;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .assessment-container {
+        padding: 10px;
+    }
+    
+    .assessment-header h1 {
+        font-size: 2rem;
+    }
+    
+    .options-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .assessment-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .category-scores {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .quick-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-recommendations {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assessment-container">
+    <div class="assessment-header">
+        <h1>🧠 Mental Health Assessment</h1>
+        <p>Take a few minutes to assess your current mental health and well-being</p>
+    </div>
+    
+    <!-- Quick Mood Check Popup -->
+    <div class="quick-assessment">
+        <h3>⚡ Quick Mood Check</h3>
+        <p>Get instant mental health insights with our comprehensive quick assessment!</p>
+        <button class="btn-quick" onclick="showQuickMoodCheck()">Start Quick Mood Check</button>
+    </div>
+    
+    <!-- Quick Mood Check Modal -->
+    <div id="quickMoodModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🧠 Quick Mood Check</h2>
+                <span class="close-btn" onclick="closeQuickMoodCheck()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="quick-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="quickProgressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="quickProgressText">Question 1 of 10</div>
+                </div>
+                
+                <div id="quickQuestions">
+                    <!-- Quick questions will be populated here -->
+                </div>
+                
+                <div class="modal-controls">
+                    <button class="btn-assessment btn-secondary" id="quickPrevBtn" onclick="previousQuickQuestion()" disabled>
+                        ← Previous
+                    </button>
+                    <button class="btn-assessment btn-primary" id="quickNextBtn" onclick="nextQuickQuestion()">
+                        Next →
+                    </button>
+                    <button class="btn-assessment btn-success" id="quickSubmitBtn" onclick="submitQuickAssessment()" style="display: none;" disabled>
+                        Submit Assessment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Full Assessment -->
+    <div id="fullAssessment">
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progressText">Question 1 of 20</div>
+        </div>
+        
+        <form id="assessmentForm">
+            {% for question in questions %}
+            <div class="question-card" id="question{{ question.id }}" style="display: none;">
+                <div class="question-text">
+                    <span class="question-number">{{ question.id }}</span>
+                    {{ question.question }}
+                </div>
+                <div class="options-container">
+                    {% for option in question.options %}
+                    <button type="button" class="option-button" 
+                            data-question="{{ question.id }}" 
+                            data-value="{{ loop.index }}"
+                            onclick="selectOption({{ question.id }}, {{ loop.index }})">
+                        {{ option }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </form>
+        
+        <div class="assessment-controls">
+            <button type="button" class="btn-assessment btn-secondary" id="prevBtn" onclick="previousQuestion()" disabled>
+                ← Previous
+            </button>
+            <button type="button" class="btn-assessment btn-primary" id="nextBtn" onclick="nextQuestion()">
+                Next →
+            </button>
+            <button type="button" class="btn-assessment btn-success" id="submitBtn" onclick="submitAssessment()" style="display: none;">
+                Submit Assessment
+            </button>
+        </div>
+    </div>
+    
+    <!-- Results Container -->
+    <div class="results-container" id="resultsContainer">
+        <div class="mood-result">
+            <div class="mood-icon" id="moodIcon">😊</div>
+            <div class="mood-category" id="moodCategory">Good</div>
+            <div class="mood-score" id="moodScore">Score: 75/100</div>
+            <div class="mood-description" id="moodDescription">
+                You're doing well overall with some areas for improvement.
+            </div>
+        </div>
+        
+        <div class="recommendations" id="recommendations">
+            <h3>💡 Recommendations</h3>
+            <div id="recommendationsList"></div>
+        </div>
+        
+        <div class="insights" id="insights">
+            <h3>🔍 Personalized Insights</h3>
+            <div id="insightsList"></div>
+        </div>
+        
+        <div class="category-scores" id="categoryScores">
+            <!-- Category scores will be populated here -->
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn-assessment btn-primary" onclick="startNewAssessment()">
+                Take Another Assessment
+            </button>
+            <button class="btn-assessment btn-secondary" onclick="viewHistory()">
+                View History
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuestion = 1;
+let totalQuestions = {{ questions|length }};
+let responses = {};
+let isQuickAssessment = false;
+
+// Quick Mood Check variables
+let quickCurrentQuestion = 1;
+let quickTotalQuestions = 10;
+let quickResponses = {};
+let quickQuestions = [];
+
+// Initialize assessment
+document.addEventListener('DOMContentLoaded', function() {
+    showQuestion(1);
+    updateProgress();
+    loadQuickQuestions();
+});
+
+function loadQuickQuestions() {
+    // Select 10 key questions covering different mental health conditions
+    const keyQuestionIds = [1, 2, 6, 7, 11, 15, 19, 23, 27, 28]; // Mix of depression, anxiety, bipolar, PTSD, OCD, ADHD, general
+    quickQuestions = keyQuestionIds.map(id => {
+        const question = {{ questions|tojson }};
+        return question.find(q => q.id === id);
+    }).filter(q => q !== undefined);
+}
+
+function showQuickMoodCheck() {
+    document.getElementById('quickMoodModal').style.display = 'flex';
+    quickCurrentQuestion = 1;
+    quickResponses = {};
+    showQuickQuestion(1);
+    updateQuickProgress();
+}
+
+function closeQuickMoodCheck() {
+    document.getElementById('quickMoodModal').style.display = 'none';
+}
+
+function showQuickQuestion(questionNum) {
+    if (questionNum < 1 || questionNum > quickTotalQuestions) return;
+    
+    const question = quickQuestions[questionNum - 1];
+    if (!question) return;
+    
+    const questionsContainer = document.getElementById('quickQuestions');
+    const currentResponse = quickResponses[question.id];
+    
+    questionsContainer.innerHTML = `
+        <div class="quick-question">
+            <h3>${question.question}</h3>
+            <div class="quick-options">
+                ${question.options.map((option, index) => {
+                    const isSelected = currentResponse === (index + 1);
+                    return `
+                        <div class="quick-option ${isSelected ? 'selected' : ''}" onclick="selectQuickOption(${question.id}, ${index + 1}, this)">
+                            ${option}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+    
+    updateQuickProgress();
+    updateQuickNavigationButtons();
+}
+
+function selectQuickOption(questionId, value, element) {
+    // Remove selected class from all options in current question
+    const currentQuestion = document.querySelector('.quick-question');
+    if (currentQuestion) {
+        currentQuestion.querySelectorAll('.quick-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+    }
+    
+    // Add selected class to clicked option
+    if (element) {
+        element.classList.add('selected');
+    }
+    
+    // Store response
+    quickResponses[questionId] = value;
+    
+    // Debug: Log the response
+    console.log(`Question ${questionId} answered with value ${value}`);
+    console.log('Current responses:', quickResponses);
+    
+    // Update progress and navigation
+    updateQuickProgress();
+    updateQuickNavigationButtons();
+    
+    // Auto-advance to next question after a short delay
+    setTimeout(() => {
+        if (quickCurrentQuestion < quickTotalQuestions) {
+            nextQuickQuestion();
+        }
+    }, 500);
+}
+
+function nextQuickQuestion() {
+    if (quickCurrentQuestion < quickTotalQuestions) {
+        quickCurrentQuestion++;
+        showQuickQuestion(quickCurrentQuestion);
+    }
+}
+
+function previousQuickQuestion() {
+    if (quickCurrentQuestion > 1) {
+        quickCurrentQuestion--;
+        showQuickQuestion(quickCurrentQuestion);
+    }
+}
+
+function updateQuickProgress() {
+    const progress = (quickCurrentQuestion / quickTotalQuestions) * 100;
+    document.getElementById('quickProgressFill').style.width = progress + '%';
+    
+    const answeredCount = Object.keys(quickResponses).length;
+    document.getElementById('quickProgressText').textContent = 
+        `Question ${quickCurrentQuestion} of ${quickTotalQuestions} (${answeredCount} answered)`;
+}
+
+function updateQuickNavigationButtons() {
+    const prevBtn = document.getElementById('quickPrevBtn');
+    const nextBtn = document.getElementById('quickNextBtn');
+    const submitBtn = document.getElementById('quickSubmitBtn');
+    
+    prevBtn.disabled = quickCurrentQuestion === 1;
+    
+    if (quickCurrentQuestion === quickTotalQuestions) {
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'inline-block';
+        
+        // Enable submit button only if all questions are answered
+        const answeredCount = Object.keys(quickResponses).length;
+        if (answeredCount === quickTotalQuestions) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('btn-secondary');
+            submitBtn.classList.add('btn-success');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.remove('btn-success');
+            submitBtn.classList.add('btn-secondary');
+        }
+    } else {
+        nextBtn.style.display = 'inline-block';
+        submitBtn.style.display = 'none';
+    }
+}
+
+function submitQuickAssessment() {
+    // Debug: Log current state
+    console.log('Submitting assessment...');
+    console.log('Total questions:', quickTotalQuestions);
+    console.log('Answered questions:', Object.keys(quickResponses).length);
+    console.log('Responses:', quickResponses);
+    
+    // Check if all questions are answered
+    const answeredQuestions = Object.keys(quickResponses).length;
+    if (answeredQuestions < quickTotalQuestions) {
+        const missingQuestions = [];
+        for (let i = 1; i <= quickTotalQuestions; i++) {
+            if (!quickResponses[i]) {
+                missingQuestions.push(i);
+            }
+        }
+        alert(`Please answer all questions before submitting. Missing questions: ${missingQuestions.join(', ')}`);
+        return;
+    }
+    
+    // Show loading
+    const submitBtn = document.getElementById('quickSubmitBtn');
+    submitBtn.innerHTML = 'Processing...';
+    submitBtn.disabled = true;
+    
+    // Prepare data
+    const assessmentData = {
+        responses: quickResponses,
+        is_quick: true
+    };
+    
+    // Submit to server
+    fetch('/api/mood-assessment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assessmentData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            displayQuickResults(data.analysis);
+        } else {
+            console.error('Server error:', data.error);
+            alert(`Error submitting assessment: ${data.error || 'Unknown error'}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(`Error submitting assessment: ${error.message}`);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = 'Submit Assessment';
+        submitBtn.disabled = false;
+    });
+}
+
+function displayQuickResults(analysis) {
+    const questionsContainer = document.getElementById('quickQuestions');
+    
+    let resultsHTML = `
+        <div class="mental-health-results">
+            <h3>🧠 Mental Health Analysis Complete!</h3>
+            <p>Your Quick Mood Check has been analyzed using AI-powered assessment.</p>
+        </div>
+    `;
+    
+    // Show detected conditions
+    if (analysis.detected_conditions && Object.keys(analysis.detected_conditions).length > 0) {
+        resultsHTML += '<div class="condition-detected">';
+        resultsHTML += '<h4>⚠️ Mental Health Conditions Detected:</h4>';
+        
+        for (const [condition, score] of Object.entries(analysis.detected_conditions)) {
+            const conditionInfo = {
+                'depression': { name: 'Depression', icon: '💙' },
+                'anxiety': { name: 'Anxiety', icon: '😰' },
+                'bipolar': { name: 'Bipolar Disorder', icon: '🌊' },
+                'ptsd': { name: 'PTSD', icon: '🛡️' },
+                'ocd': { name: 'OCD', icon: '🔄' },
+                'adhd': { name: 'ADHD', icon: '⚡' }
+            };
+            
+            const info = conditionInfo[condition] || { name: condition, icon: '⚠️' };
+            resultsHTML += `
+                <div style="margin: 10px 0; padding: 10px; background: #fff; border-radius: 8px; border-left: 4px solid #ff6b6b;">
+                    <strong>${info.icon} ${info.name}</strong> (Score: ${Math.round(score * 100)}%)
+                </div>
+            `;
+        }
+        resultsHTML += '</div>';
+    }
+    
+    // Show recommended games
+    if (analysis.recommended_games && analysis.recommended_games.length > 0) {
+        resultsHTML += `
+            <div class="recommended-games">
+                <h4>🎮 Recommended Games for You:</h4>
+                <div class="game-recommendations">
+                    ${analysis.recommended_games.map(game => `
+                        <span class="game-tag">${game.charAt(0).toUpperCase() + game.slice(1)}</span>
+                    `).join('')}
+                </div>
+                <p style="margin-top: 15px; color: #666; font-size: 0.9rem;">
+                    These games are specifically recommended based on your mental health assessment and can help improve your well-being.
+                </p>
+            </div>
+        `;
+    }
+    
+    // Show key recommendations
+    if (analysis.recommendations && analysis.recommendations.length > 0) {
+        resultsHTML += `
+            <div style="background: #f8f9fa; border-radius: 15px; padding: 20px; margin: 20px 0;">
+                <h4 style="color: #333; margin-bottom: 15px;">💡 Key Recommendations:</h4>
+                <ul style="margin: 0; padding-left: 20px;">
+                    ${analysis.recommendations.slice(0, 5).map(rec => `<li style="margin: 8px 0; color: #555;">${rec}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    // Add action buttons
+    resultsHTML += `
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn-assessment btn-primary" onclick="playRecommendedGames()" style="margin: 5px;">
+                🎮 Play Recommended Games
+            </button>
+            <button class="btn-assessment btn-secondary" onclick="startQuickMoodCheck()" style="margin: 5px;">
+                🔄 Take Another Assessment
+            </button>
+            <button class="btn-assessment btn-secondary" onclick="closeQuickMoodCheck()" style="margin: 5px;">
+                ✅ Close
+            </button>
+        </div>
+    `;
+    
+    questionsContainer.innerHTML = resultsHTML;
+    
+    // Hide navigation buttons
+    document.querySelector('.modal-controls').style.display = 'none';
+}
+
+function playRecommendedGames() {
+    closeQuickMoodCheck();
+    // Redirect to games page
+    window.location.href = '/games';
+}
+
+function startQuickAssessment() {
+    isQuickAssessment = true;
+    // Hide full assessment and show quick assessment
+    document.getElementById('fullAssessment').style.display = 'none';
+    // This would load 5 random questions
+    // For now, we'll use the first 5 questions
+    totalQuestions = 5;
+    showQuestion(1);
+    updateProgress();
+}
+
+function showQuestion(questionNum) {
+    // Hide all questions
+    for (let i = 1; i <= totalQuestions; i++) {
+        document.getElementById(`question${i}`).style.display = 'none';
+    }
+    
+    // Show current question
+    document.getElementById(`question${questionNum}`).style.display = 'block';
+    
+    // Update progress
+    updateProgress();
+    
+    // Update navigation buttons
+    updateNavigationButtons();
+}
+
+function updateProgress() {
+    const progress = (currentQuestion / totalQuestions) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+    document.getElementById('progressText').textContent = 
+        `Question ${currentQuestion} of ${totalQuestions}`;
+}
+
+function updateNavigationButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    prevBtn.disabled = currentQuestion === 1;
+    
+    if (currentQuestion === totalQuestions) {
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'inline-block';
+    } else {
+        nextBtn.style.display = 'inline-block';
+        submitBtn.style.display = 'none';
+    }
+}
+
+function selectOption(questionId, value) {
+    // Remove selected class from all options for this question
+    const questionElement = document.getElementById(`question${questionId}`);
+    const options = questionElement.querySelectorAll('.option-button');
+    options.forEach(option => option.classList.remove('selected'));
+    
+    // Add selected class to clicked option
+    event.target.classList.add('selected');
+    
+    // Store response
+    responses[questionId] = value;
+    
+    // Auto-advance to next question after a short delay
+    setTimeout(() => {
+        if (currentQuestion < totalQuestions) {
+            nextQuestion();
+        }
+    }, 500);
+}
+
+function nextQuestion() {
+    if (currentQuestion < totalQuestions) {
+        currentQuestion++;
+        showQuestion(currentQuestion);
+    }
+}
+
+function previousQuestion() {
+    if (currentQuestion > 1) {
+        currentQuestion--;
+        showQuestion(currentQuestion);
+    }
+}
+
+function submitAssessment() {
+    // Check if all questions are answered
+    const answeredQuestions = Object.keys(responses).length;
+    if (answeredQuestions < totalQuestions) {
+        alert('Please answer all questions before submitting.');
+        return;
+    }
+    
+    // Show loading
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = 'Processing...';
+    submitBtn.disabled = true;
+    
+    // Prepare data
+    const assessmentData = {
+        responses: responses,
+        is_quick: isQuickAssessment
+    };
+    
+    // Submit to server
+    fetch('/api/mood-assessment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assessmentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayResults(data.analysis);
+        } else {
+            alert('Error submitting assessment. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting assessment. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = 'Submit Assessment';
+        submitBtn.disabled = false;
+    });
+}
+
+function displayResults(analysis) {
+    // Hide assessment form
+    document.getElementById('fullAssessment').style.display = 'none';
+    
+    // Show results
+    const resultsContainer = document.getElementById('resultsContainer');
+    resultsContainer.style.display = 'block';
+    
+    // Update mood result
+    document.getElementById('moodIcon').textContent = analysis.icon;
+    document.getElementById('moodCategory').textContent = analysis.mood_category.charAt(0).toUpperCase() + analysis.mood_category.slice(1);
+    document.getElementById('moodScore').textContent = `Score: ${analysis.overall_score}/100`;
+    document.getElementById('moodDescription').textContent = analysis.description;
+    
+    // Update recommendations
+    const recommendationsList = document.getElementById('recommendationsList');
+    recommendationsList.innerHTML = '';
+    analysis.recommendations.forEach(rec => {
+        const div = document.createElement('div');
+        div.className = 'recommendation-item';
+        div.textContent = rec;
+        recommendationsList.appendChild(div);
+    });
+    
+    // Update insights
+    const insightsList = document.getElementById('insightsList');
+    insightsList.innerHTML = '';
+    analysis.insights.forEach(insight => {
+        const div = document.createElement('div');
+        div.className = 'insight-item';
+        div.textContent = insight;
+        insightsList.appendChild(div);
+    });
+    
+    // Update category scores
+    const categoryScores = document.getElementById('categoryScores');
+    categoryScores.innerHTML = '';
+    Object.entries(analysis.category_scores).forEach(([category, score]) => {
+        const div = document.createElement('div');
+        div.className = 'category-score';
+        div.innerHTML = `
+            <div class="category-name">${category.replace('_', ' ')}</div>
+            <div class="category-value">${Math.round(score)}%</div>
+        `;
+        categoryScores.appendChild(div);
+    });
+    
+    // Scroll to results
+    resultsContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
+function startNewAssessment() {
+    // Reset everything
+    currentQuestion = 1;
+    responses = {};
+    isQuickAssessment = false;
+    totalQuestions = {{ questions|length }};
+    
+    // Hide results
+    document.getElementById('resultsContainer').style.display = 'none';
+    
+    // Show assessment
+    document.getElementById('fullAssessment').style.display = 'block';
+    
+    // Reset form
+    document.querySelectorAll('.option-button').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    showQuestion(1);
+    updateProgress();
+}
+
+function viewHistory() {
+    window.location.href = '/mood-history';
+}
+</script>
+{% endblock %}

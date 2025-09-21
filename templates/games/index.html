@@ -14,32 +14,62 @@
   </div>
   
   <div class="games-grid">
-    <div class="game-card" data-game="candy-crash">
-      <div class="game-icon">🍭</div>
-      <h3>Candy Crash</h3>
-      <p>Match colorful candies and create explosive combinations!</p>
-      <button class="play-btn" onclick="startGame('candy-crash')">Play Now</button>
+    <!-- Stress Relief Games -->
+    <div class="game-card" data-game="breathing">
+      <div class="game-icon">🌬️</div>
+      <h3>Breathing Exercise</h3>
+      <p>Practice mindful breathing to reduce stress and anxiety</p>
+      <a href="{{ url_for('game_breathing') }}" class="play-btn">Play Now</a>
     </div>
     
-    <div class="game-card" data-game="lumosity">
+    <div class="game-card" data-game="memory">
       <div class="game-icon">🧠</div>
-      <h3>Lumosity</h3>
-      <p>Train your brain with challenging puzzles and memory games!</p>
-      <button class="play-btn" onclick="startGame('lumosity')">Play Now</button>
+      <h3>Memory Match</h3>
+      <p>Improve your focus with this classic memory card game</p>
+      <a href="{{ url_for('game_memory') }}" class="play-btn">Play Now</a>
     </div>
     
-    <div class="game-card" data-game="subway-surfers">
-      <div class="game-icon">🏃‍♂️</div>
-      <h3>Subway Surfers</h3>
-      <p>Run, jump, and dodge obstacles in this endless runner!</p>
-      <button class="play-btn" onclick="startGame('subway-surfers')">Play Now</button>
+    <div class="game-card" data-game="reaction">
+      <div class="game-icon">⚡</div>
+      <h3>Reaction Time</h3>
+      <p>Test and improve your reaction speed and focus</p>
+      <a href="{{ url_for('game_reaction') }}" class="play-btn">Play Now</a>
     </div>
     
-    <div class="game-card" data-game="funny-maze">
-      <div class="game-icon">😄</div>
-      <h3>Funny Maze</h3>
-      <p>Navigate through hilarious mazes with funny characters!</p>
-      <button class="play-btn" onclick="startGame('funny-maze')">Play Now</button>
+    <div class="game-card" data-game="puzzle">
+      <div class="game-icon">🧩</div>
+      <h3>Stress Puzzle</h3>
+      <p>Solve relaxing puzzles to calm your mind</p>
+      <a href="{{ url_for('game_puzzle') }}" class="play-btn">Play Now</a>
+    </div>
+    
+    <!-- Classic Games -->
+    <div class="game-card" data-game="rps">
+      <div class="game-icon">✊</div>
+      <h3>Rock Paper Scissors</h3>
+      <p>Classic game with performance tracking</p>
+      <a href="{{ url_for('game_rps') }}" class="play-btn">Play Now</a>
+    </div>
+    
+    <div class="game-card" data-game="guess">
+      <div class="game-icon">🔢</div>
+      <h3>Guess the Number</h3>
+      <p>Test your logical thinking skills</p>
+      <a href="{{ url_for('game_guess') }}" class="play-btn">Play Now</a>
+    </div>
+    
+    <div class="game-card" data-game="trivia">
+      <div class="game-icon">❓</div>
+      <h3>Trivia Challenge</h3>
+      <p>Expand your knowledge with fun questions</p>
+      <a href="{{ url_for('game_trivia') }}" class="play-btn">Play Now</a>
+    </div>
+    
+    <div class="game-card" data-game="leaderboard">
+      <div class="game-icon">🏆</div>
+      <h3>Leaderboard</h3>
+      <p>See how you rank against other players</p>
+      <a href="{{ url_for('game_leaderboard') }}" class="play-btn">View Now</a>
     </div>
   </div>
 </div>

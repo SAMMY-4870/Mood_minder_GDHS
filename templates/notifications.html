@@ -1,0 +1,483 @@
+{% extends 'base.html' %}
+{% block title %}Notifications · Mental Health App{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+<style>
+.notifications-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.notification-item {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #6f42c1;
+    transition: all 0.3s ease;
+}
+
+.notification-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.notification-item.achievement {
+    border-left-color: #feca57;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+}
+
+.notification-item.insight {
+    border-left-color: #48dbfb;
+    background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+}
+
+.notification-item.motivation {
+    border-left-color: #ff6b6b;
+    background: linear-gradient(135deg, #ffeaa7 0%, #ffffff 100%);
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.notification-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.notification-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.notification-timestamp {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-left: auto;
+}
+
+.notification-message {
+    color: #555;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.empty-notifications {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-notifications i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.notification-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-notification {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-mark-read {
+    background: #6f42c1;
+    color: white;
+}
+
+.btn-mark-read:hover {
+    background: #5a32a3;
+    transform: translateY(-1px);
+}
+
+.btn-dismiss {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.btn-dismiss:hover {
+    background: #dee2e6;
+}
+
+.notifications-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+}
+
+.notifications-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.notifications-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.refresh-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+}
+
+.notification-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border: 2px solid #6f42c1;
+    background: transparent;
+    color: #6f42c1;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.filter-btn.active {
+    background: #6f42c1;
+    color: white;
+}
+
+.filter-btn:hover {
+    background: #6f42c1;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .notifications-header h1 {
+        font-size: 2rem;
+    }
+    
+    .notification-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .notification-timestamp {
+        margin-left: 0;
+    }
+    
+    .refresh-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-container">
+    <div class="notifications-header">
+        <h1>🔔 Notifications</h1>
+        <p>Your achievements, insights, and motivational messages</p>
+    </div>
+    
+    <div class="notification-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="achievement">Achievements</button>
+        <button class="filter-btn" data-filter="insight">Insights</button>
+        <button class="filter-btn" data-filter="motivation">Motivation</button>
+    </div>
+    
+    {% if notifications %}
+        <div id="notificationsList">
+            {% for notification in notifications %}
+            <div class="notification-item {{ notification.type }}" data-type="{{ notification.type }}">
+                <div class="notification-header">
+                    <div class="notification-icon">{{ notification.icon }}</div>
+                    <div>
+                        <h3 class="notification-title">{{ notification.title }}</h3>
+                        <p class="notification-message">{{ notification.message }}</p>
+                    </div>
+                    <div class="notification-timestamp">
+                        {{ notification.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                    </div>
+                </div>
+                {% if not notification.read %}
+                <div class="notification-actions">
+                    <button class="btn-notification btn-mark-read" onclick="markAsRead('{{ notification._id }}')">
+                        Mark as Read
+                    </button>
+                    <button class="btn-notification btn-dismiss" onclick="dismissNotification('{{ notification._id }}')">
+                        Dismiss
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-notifications">
+            <i class="fas fa-bell-slash"></i>
+            <h3>No notifications yet</h3>
+            <p>Start playing games and engaging with the platform to receive notifications about your progress!</p>
+            <a href="{{ url_for('games') }}" class="btn btn-primary">Start Playing</a>
+        </div>
+    {% endif %}
+</div>
+
+<button class="refresh-btn" onclick="refreshNotifications()" title="Refresh Notifications">
+    <i class="fas fa-sync-alt"></i>
+</button>
+
+<script>
+// Filter notifications
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const filter = this.dataset.filter;
+        
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Filter notifications
+        const notifications = document.querySelectorAll('.notification-item');
+        notifications.forEach(notification => {
+            if (filter === 'all' || notification.dataset.type === filter) {
+                notification.style.display = 'block';
+            } else {
+                notification.style.display = 'none';
+            }
+        });
+    });
+});
+
+// Mark notification as read
+function markAsRead(notificationId) {
+    fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            notification_id: notificationId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the notification from the UI
+            const notification = document.querySelector(`[data-id="${notificationId}"]`);
+            if (notification) {
+                notification.style.opacity = '0.5';
+                notification.querySelector('.notification-actions').style.display = 'none';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error marking notification as read:', error);
+    });
+}
+
+// Dismiss notification
+function dismissNotification(notificationId) {
+    // Remove from UI immediately
+    const notification = document.querySelector(`[data-id="${notificationId}"]`);
+    if (notification) {
+        notification.style.transition = 'all 0.3s ease';
+        notification.style.transform = 'translateX(-100%)';
+        notification.style.opacity = '0';
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }
+}
+
+// Refresh notifications
+function refreshNotifications() {
+    const refreshBtn = document.querySelector('.refresh-btn');
+    refreshBtn.style.transform = 'rotate(360deg)';
+    
+    fetch('/api/notifications/check')
+    .then(response => response.json())
+    .then(data => {
+        if (data.notifications && data.notifications.length > 0) {
+            // Show new notifications
+            showNewNotifications(data.notifications);
+        }
+        
+        if (data.motivational_message) {
+            showMotivationalMessage(data.motivational_message);
+        }
+        
+        if (data.insights && data.insights.length > 0) {
+            showInsights(data.insights);
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing notifications:', error);
+    })
+    .finally(() => {
+        setTimeout(() => {
+            refreshBtn.style.transform = 'rotate(0deg)';
+        }, 1000);
+    });
+}
+
+// Show new notifications
+function showNewNotifications(notifications) {
+    const container = document.getElementById('notificationsList');
+    
+    notifications.forEach(notification => {
+        const notificationElement = createNotificationElement(notification);
+        container.insertBefore(notificationElement, container.firstChild);
+    });
+}
+
+// Create notification element
+function createNotificationElement(notification) {
+    const div = document.createElement('div');
+    div.className = `notification-item ${notification.type}`;
+    div.dataset.type = notification.type;
+    div.dataset.id = notification.id || Date.now();
+    
+    const timestamp = new Date(notification.timestamp).toLocaleString();
+    
+    div.innerHTML = `
+        <div class="notification-header">
+            <div class="notification-icon">${notification.icon}</div>
+            <div>
+                <h3 class="notification-title">${notification.title}</h3>
+                <p class="notification-message">${notification.message}</p>
+            </div>
+            <div class="notification-timestamp">${timestamp}</div>
+        </div>
+        <div class="notification-actions">
+            <button class="btn-notification btn-mark-read" onclick="markAsRead('${div.dataset.id}')">
+                Mark as Read
+            </button>
+            <button class="btn-notification btn-dismiss" onclick="dismissNotification('${div.dataset.id}')">
+                Dismiss
+            </button>
+        </div>
+    `;
+    
+    return div;
+}
+
+// Show motivational message
+function showMotivationalMessage(message) {
+    // Create a toast notification
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 1000;
+        max-width: 300px;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">🌟</span>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// Show insights
+function showInsights(insights) {
+    insights.forEach(insight => {
+        const insightElement = createNotificationElement({
+            type: 'insight',
+            title: 'Progress Insight',
+            message: insight,
+            icon: '💡',
+            timestamp: new Date().toISOString()
+        });
+        
+        const container = document.getElementById('notificationsList');
+        if (container) {
+            container.insertBefore(insightElement, container.firstChild);
+        }
+    });
+}
+
+// Auto-refresh every 30 seconds
+setInterval(refreshNotifications, 30000);
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

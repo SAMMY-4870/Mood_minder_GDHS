@@ -1,39 +1,272 @@
 {% extends 'base.html' %}
 {% block title %}Breathing Exercise · Games{% endblock %}
+{% block extra_css %}
+<style>
+.completion-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+    z-index: 1000;
+    display: none;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    display: none;
+}
+
+.breathing-circle {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    margin: 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: all 4s ease-in-out;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+}
+
+.breathing-circle.inhale {
+    transform: scale(1.2);
+    background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.breathing-circle.exhale {
+    transform: scale(1);
+    background: linear-gradient(45deg, #764ba2, #667eea);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-8 text-center">
     <h2 class="mb-3">🌬️ Breathing Exercise</h2>
     <p>Follow the 4-4-4-4 box breathing: Inhale 4s, hold 4s, exhale 4s, hold 4s.</p>
-    <div class="border rounded p-4 mb-3">
-      <div id="phase" class="fs-4 mb-2">Get Ready</div>
-      <div id="counter" class="display-5">4</div>
+    
+    <div class="breathing-circle" id="breathingCircle">
+      Breathe In
     </div>
-    <button class="btn btn-primary" id="start">Start</button>
+    
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    
+    <div class="mb-3">
+      <p>Cycles: <span id="cycleCount">0</span>/5</p>
+      <p>Phase: <span id="currentPhase">Get Ready</span></p>
+    </div>
+    
+    <button class="btn btn-primary" id="startBtn">Start Exercise</button>
+    <button class="btn btn-secondary ms-2" id="resetBtn" disabled>Reset</button>
   </div>
 </div>
+
+<!-- Completion Modal -->
+<div class="overlay" id="overlay"></div>
+<div class="completion-message" id="completionMessage">
+    <h3>🎉 Exercise Complete!</h3>
+    <div id="completionResults"></div>
+    <button class="btn btn-primary" onclick="closeCompletion()">Take Mood Assessment</button>
+    <button class="btn btn-secondary ms-2" onclick="resetExercise()">Try Again</button>
+</div>
+
 <script>
-  const phases = ["Inhale", "Hold", "Exhale", "Hold"]; // 4 seconds each
-  let running = false;
-  document.getElementById('start').addEventListener('click', () => {
-    if (running) return; running = true;
-    let phaseIdx = 0;
-    function runPhase() {
-      let t = 4;
-      document.getElementById('phase').textContent = phases[phaseIdx % phases.length];
-      document.getElementById('counter').textContent = t;
-      const timer = setInterval(() => {
-        t -= 1;
-        document.getElementById('counter').textContent = t;
-        if (t <= 0) {
-          clearInterval(timer);
-          phaseIdx += 1;
-          runPhase();
-        }
-      }, 1000);
+class BreathingExercise {
+    constructor() {
+        this.cycles = 0;
+        this.maxCycles = 5;
+        this.currentPhase = 0;
+        this.phases = ["Inhale", "Hold", "Exhale", "Hold"];
+        this.phaseDuration = 4; // seconds
+        this.isRunning = false;
+        this.startTime = null;
+        this.timer = null;
+        
+        this.init();
     }
-    runPhase();
-  });
+    
+    init() {
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        document.getElementById('startBtn').addEventListener('click', () => this.startExercise());
+        document.getElementById('resetBtn').addEventListener('click', () => this.resetExercise());
+    }
+    
+    startExercise() {
+        if (this.isRunning) return;
+        
+        this.isRunning = true;
+        this.startTime = Date.now();
+        this.cycles = 0;
+        this.currentPhase = 0;
+        
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('resetBtn').disabled = false;
+        
+        this.runPhase();
+    }
+    
+    runPhase() {
+        if (!this.isRunning) return;
+        
+        const phase = this.phases[this.currentPhase];
+        const circle = document.getElementById('breathingCircle');
+        
+        document.getElementById('currentPhase').textContent = phase;
+        
+        if (phase === 'Inhale') {
+            circle.textContent = 'Breathe In';
+            circle.className = 'breathing-circle inhale';
+        } else if (phase === 'Exhale') {
+            circle.textContent = 'Breathe Out';
+            circle.className = 'breathing-circle exhale';
+        } else {
+            circle.textContent = phase;
+            circle.className = 'breathing-circle';
+        }
+        
+        let timeLeft = this.phaseDuration;
+        const counter = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(counter);
+                this.nextPhase();
+            }
+        }, 1000);
+    }
+    
+    nextPhase() {
+        this.currentPhase++;
+        
+        if (this.currentPhase >= this.phases.length) {
+            this.currentPhase = 0;
+            this.cycles++;
+            document.getElementById('cycleCount').textContent = this.cycles;
+            
+            // Update progress
+            const progress = (this.cycles / this.maxCycles) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            
+            if (this.cycles >= this.maxCycles) {
+                this.endExercise();
+                return;
+            }
+        }
+        
+        this.runPhase();
+    }
+    
+    endExercise() {
+        this.isRunning = false;
+        clearInterval(this.timer);
+        
+        const timeTaken = Math.floor((Date.now() - this.startTime) / 1000);
+        const minutes = Math.floor(timeTaken / 60);
+        const seconds = timeTaken % 60;
+        
+        // Show completion message
+        document.getElementById('completionResults').innerHTML = `
+            <p>You completed ${this.cycles} breathing cycles!</p>
+            <p>Time: ${minutes}:${seconds.toString().padStart(2, '0')}</p>
+            <p>Great job on your breathing exercise!</p>
+        `;
+        
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('completionMessage').style.display = 'block';
+        
+        // Submit results to server
+        this.submitResults(timeTaken);
+    }
+    
+    submitResults(timeTaken) {
+        const formData = new FormData();
+        formData.append('action', 'complete_game');
+        formData.append('cycles_completed', this.cycles);
+        formData.append('time_taken', timeTaken);
+        formData.append('exercise_type', 'breathing');
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                console.log('Breathing exercise results submitted');
+            }
+        });
+    }
+    
+    resetExercise() {
+        this.isRunning = false;
+        this.cycles = 0;
+        this.currentPhase = 0;
+        
+        clearInterval(this.timer);
+        
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('resetBtn').disabled = true;
+        document.getElementById('cycleCount').textContent = '0';
+        document.getElementById('currentPhase').textContent = 'Get Ready';
+        document.getElementById('progressFill').style.width = '0%';
+        
+        const circle = document.getElementById('breathingCircle');
+        circle.textContent = 'Breathe In';
+        circle.className = 'breathing-circle';
+    }
+}
+
+function closeCompletion() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('completionMessage').style.display = 'none';
+    // Redirect to mood assessment
+    window.location.href = '/mood-assessment';
+}
+
+function resetExercise() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('completionMessage').style.display = 'none';
+    breathingExercise.resetExercise();
+}
+
+// Initialize exercise when page loads
+let breathingExercise;
+document.addEventListener('DOMContentLoaded', () => {
+    breathingExercise = new BreathingExercise();
+});
 </script>
 {% endblock %}
 

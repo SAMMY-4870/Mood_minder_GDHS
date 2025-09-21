@@ -1,0 +1,535 @@
+{% extends 'base.html' %}
+{% block title %}Reaction Time · Games{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+<style>
+.reaction-game {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.reaction-area {
+    width: 300px;
+    height: 300px;
+    margin: 30px auto;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.reaction-area.waiting {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.reaction-area.ready {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    animation: pulse 1s infinite;
+}
+
+.reaction-area.clicked {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    transform: scale(0.95);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.game-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 15px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #6f42c1;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.reaction-times {
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.reaction-time-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.reaction-time-item:last-child {
+    border-bottom: none;
+}
+
+.focus-meter {
+    width: 100%;
+    height: 25px;
+    background: #e9ecef;
+    border-radius: 15px;
+    overflow: hidden;
+    margin: 20px 0;
+    position: relative;
+}
+
+.focus-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #0abde3);
+    transition: width 0.5s ease;
+    border-radius: 15px;
+}
+
+.focus-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #6c757d;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.game-controls {
+    margin: 30px 0;
+}
+
+.btn-game {
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    border-radius: 30px;
+    margin: 0 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.instructions {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.instructions h4 {
+    margin-bottom: 15px;
+}
+
+.instructions ol {
+    text-align: left;
+    margin: 0;
+    padding-left: 20px;
+}
+
+.instructions li {
+    margin-bottom: 8px;
+}
+
+.completion-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    text-align: center;
+    z-index: 1000;
+    display: none;
+    max-width: 500px;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    display: none;
+}
+
+.performance-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin: 5px;
+}
+
+.badge-excellent { background: #d4edda; color: #155724; }
+.badge-good { background: #d1ecf1; color: #0c5460; }
+.badge-average { background: #fff3cd; color: #856404; }
+.badge-poor { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reaction-game">
+    <h2 class="mb-4">⚡ Reaction Time Test</h2>
+    
+    <div class="instructions">
+        <h4>How to Play:</h4>
+        <ol>
+            <li>Click "Start Test" to begin</li>
+            <li>Wait for the circle to turn red and say "CLICK!"</li>
+            <li>Click as fast as you can when it's ready</li>
+            <li>Complete 10 rounds to see your results</li>
+        </ol>
+    </div>
+    
+    <div class="reaction-area waiting" id="reactionArea">
+        Click "Start Test" to begin
+    </div>
+    
+    <div class="game-stats">
+        <div class="stat-item">
+            <div class="stat-value" id="currentTime">--</div>
+            <div class="stat-label">Current Time</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="bestTime">--</div>
+            <div class="stat-label">Best Time</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="avgTime">--</div>
+            <div class="stat-label">Average</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="rounds">0/10</div>
+            <div class="stat-label">Rounds</div>
+        </div>
+    </div>
+    
+    <div class="focus-meter">
+        <div class="focus-bar" id="focusBar" style="width: 0%"></div>
+        <div class="focus-label" id="focusLabel">Focus Level: 0%</div>
+    </div>
+    
+    <div class="reaction-times" id="reactionTimes">
+        <h6>Reaction Times:</h6>
+        <div id="timesList"></div>
+    </div>
+    
+    <div class="game-controls">
+        <button class="btn btn-primary btn-game" id="startBtn">Start Test</button>
+        <button class="btn btn-secondary btn-game" id="resetBtn" disabled>Reset</button>
+    </div>
+    
+    {% if stats %}
+    <div class="mt-4">
+        <h5>Your Statistics</h5>
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="stat-value">{{ stats.tests_completed or 0 }}</div>
+                <div class="stat-label">Tests Completed</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-value">{{ (stats.best_time / 1000)|round(2) if stats.best_time else '--' }}s</div>
+                <div class="stat-label">Best Time</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-value">{{ stats.total_rounds or 0 }}</div>
+                <div class="stat-label">Total Rounds</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-value">--</div>
+                <div class="stat-label">Average</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Completion Modal -->
+<div class="overlay" id="overlay"></div>
+<div class="completion-message" id="completionMessage">
+    <h3>🎯 Test Complete!</h3>
+    <div id="completionResults"></div>
+    <button class="btn btn-primary" onclick="closeCompletion()">Try Again</button>
+</div>
+
+<script>
+class ReactionGame {
+    constructor() {
+        this.reactionTimes = [];
+        this.currentRound = 0;
+        this.totalRounds = 10;
+        this.gameActive = false;
+        this.waitingForClick = false;
+        this.startTime = null;
+        this.bestTime = Infinity;
+        this.focusScores = [];
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        document.getElementById('startBtn').addEventListener('click', () => this.startTest());
+        document.getElementById('resetBtn').addEventListener('click', () => this.resetTest());
+        document.getElementById('reactionArea').addEventListener('click', () => this.handleClick());
+    }
+    
+    startTest() {
+        this.gameActive = true;
+        this.currentRound = 0;
+        this.reactionTimes = [];
+        this.focusScores = [];
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('resetBtn').disabled = false;
+        this.nextRound();
+    }
+    
+    nextRound() {
+        if (this.currentRound >= this.totalRounds) {
+            this.endTest();
+            return;
+        }
+        
+        this.currentRound++;
+        document.getElementById('rounds').textContent = `${this.currentRound}/${this.totalRounds}`;
+        
+        // Random delay between 1-4 seconds
+        const delay = Math.random() * 3000 + 1000;
+        
+        // Show waiting state
+        const area = document.getElementById('reactionArea');
+        area.className = 'reaction-area waiting';
+        area.textContent = 'Wait for it...';
+        this.waitingForClick = false;
+        
+        setTimeout(() => {
+            if (this.gameActive) {
+                this.showReady();
+            }
+        }, delay);
+    }
+    
+    showReady() {
+        const area = document.getElementById('reactionArea');
+        area.className = 'reaction-area ready';
+        area.textContent = 'CLICK!';
+        this.waitingForClick = true;
+        this.startTime = Date.now();
+    }
+    
+    handleClick() {
+        if (!this.waitingForClick || !this.gameActive) {
+            return;
+        }
+        
+        const reactionTime = Date.now() - this.startTime;
+        this.reactionTimes.push(reactionTime);
+        
+        // Update best time
+        if (reactionTime < this.bestTime) {
+            this.bestTime = reactionTime;
+            document.getElementById('bestTime').textContent = `${(reactionTime / 1000).toFixed(3)}s`;
+        }
+        
+        // Update current time
+        document.getElementById('currentTime').textContent = `${(reactionTime / 1000).toFixed(3)}s`;
+        
+        // Update average
+        const avgTime = this.reactionTimes.reduce((a, b) => a + b, 0) / this.reactionTimes.length;
+        document.getElementById('avgTime').textContent = `${(avgTime / 1000).toFixed(3)}s`;
+        
+        // Update times list
+        this.updateTimesList();
+        
+        // Calculate focus score for this round
+        const focusScore = this.calculateFocusScore(reactionTime);
+        this.focusScores.push(focusScore);
+        this.updateFocusMeter();
+        
+        // Show clicked state briefly
+        const area = document.getElementById('reactionArea');
+        area.className = 'reaction-area clicked';
+        area.textContent = `${(reactionTime / 1000).toFixed(3)}s`;
+        
+        this.waitingForClick = false;
+        
+        // Move to next round after a short delay
+        setTimeout(() => {
+            if (this.gameActive) {
+                this.nextRound();
+            }
+        }, 1000);
+    }
+    
+    calculateFocusScore(reactionTime) {
+        // Focus score based on reaction time (lower is better)
+        // Excellent: <200ms, Good: 200-300ms, Average: 300-500ms, Poor: >500ms
+        if (reactionTime < 200) return 100;
+        if (reactionTime < 300) return 80;
+        if (reactionTime < 500) return 60;
+        if (reactionTime < 800) return 40;
+        return 20;
+    }
+    
+    updateFocusMeter() {
+        const avgFocus = this.focusScores.reduce((a, b) => a + b, 0) / this.focusScores.length;
+        document.getElementById('focusBar').style.width = `${avgFocus}%`;
+        document.getElementById('focusLabel').textContent = `Focus Level: ${avgFocus.toFixed(0)}%`;
+    }
+    
+    updateTimesList() {
+        const timesList = document.getElementById('timesList');
+        timesList.innerHTML = '';
+        
+        this.reactionTimes.forEach((time, index) => {
+            const item = document.createElement('div');
+            item.className = 'reaction-time-item';
+            
+            const round = document.createElement('span');
+            round.textContent = `Round ${index + 1}:`;
+            
+            const timeDisplay = document.createElement('span');
+            timeDisplay.textContent = `${(time / 1000).toFixed(3)}s`;
+            
+            // Add performance badge
+            const badge = document.createElement('span');
+            const focusScore = this.calculateFocusScore(time);
+            if (focusScore >= 80) badge.className = 'performance-badge badge-excellent';
+            else if (focusScore >= 60) badge.className = 'performance-badge badge-good';
+            else if (focusScore >= 40) badge.className = 'performance-badge badge-average';
+            else badge.className = 'performance-badge badge-poor';
+            
+            if (focusScore >= 80) badge.textContent = 'Excellent';
+            else if (focusScore >= 60) badge.textContent = 'Good';
+            else if (focusScore >= 40) badge.textContent = 'Average';
+            else badge.textContent = 'Poor';
+            
+            item.appendChild(round);
+            item.appendChild(timeDisplay);
+            item.appendChild(badge);
+            timesList.appendChild(item);
+        });
+    }
+    
+    endTest() {
+        this.gameActive = false;
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('resetBtn').disabled = true;
+        
+        const avgTime = this.reactionTimes.reduce((a, b) => a + b, 0) / this.reactionTimes.length;
+        const avgFocus = this.focusScores.reduce((a, b) => a + b, 0) / this.focusScores.length;
+        
+        // Show completion message
+        document.getElementById('completionResults').innerHTML = `
+            <p><strong>Average Reaction Time:</strong> ${(avgTime / 1000).toFixed(3)}s</p>
+            <p><strong>Best Time:</strong> ${(this.bestTime / 1000).toFixed(3)}s</p>
+            <p><strong>Focus Score:</strong> ${avgFocus.toFixed(0)}%</p>
+            <p><strong>Performance:</strong> ${this.getPerformanceRating(avgTime)}</p>
+        `;
+        
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('completionMessage').style.display = 'block';
+        
+        // Submit results to server
+        this.submitResults(avgTime, avgFocus);
+    }
+    
+    getPerformanceRating(avgTime) {
+        if (avgTime < 200) return '🏆 Exceptional';
+        if (avgTime < 300) return '🥇 Excellent';
+        if (avgTime < 500) return '🥈 Good';
+        if (avgTime < 800) return '🥉 Average';
+        return '📈 Keep Practicing';
+    }
+    
+    submitResults(avgTime, avgFocus) {
+        const formData = new FormData();
+        formData.append('action', 'complete_test');
+        formData.append('avg_reaction_time', avgTime);
+        formData.append('best_time', this.bestTime);
+        formData.append('worst_time', Math.max(...this.reactionTimes));
+        formData.append('rounds', this.totalRounds);
+        formData.append('consistency', avgFocus / 100);
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                location.reload(); // Reload to show updated stats
+            }
+        });
+    }
+    
+    resetTest() {
+        this.gameActive = false;
+        this.reactionTimes = [];
+        this.currentRound = 0;
+        this.bestTime = Infinity;
+        this.focusScores = [];
+        
+        document.getElementById('currentTime').textContent = '--';
+        document.getElementById('bestTime').textContent = '--';
+        document.getElementById('avgTime').textContent = '--';
+        document.getElementById('rounds').textContent = '0/10';
+        document.getElementById('focusBar').style.width = '0%';
+        document.getElementById('focusLabel').textContent = 'Focus Level: 0%';
+        document.getElementById('timesList').innerHTML = '';
+        
+        const area = document.getElementById('reactionArea');
+        area.className = 'reaction-area waiting';
+        area.textContent = 'Click "Start Test" to begin';
+        
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('resetBtn').disabled = true;
+    }
+}
+
+function closeCompletion() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('completionMessage').style.display = 'none';
+}
+
+// Initialize game when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new ReactionGame();
+});
+</script>
+{% endblock %}

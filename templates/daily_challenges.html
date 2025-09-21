@@ -1,0 +1,869 @@
+{% extends 'base.html' %}
+{% block title %}Daily Challenges · Happy Quotes{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+<style>
+.challenges-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.challenges-header {
+    text-align: center;
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.challenges-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.challenges-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.streak-display {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.streak-number {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.streak-label {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.streak-progress {
+    width: 100%;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.streak-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+
+.challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.challenge-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.challenge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.challenge-card.completed {
+    border-left: 5px solid #28a745;
+    background: linear-gradient(135deg, #d4edda 0%, #f8f9fa 100%);
+}
+
+.challenge-card.in-progress {
+    border-left: 5px solid #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #f8f9fa 100%);
+}
+
+.challenge-card.locked {
+    border-left: 5px solid #6c757d;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    opacity: 0.7;
+}
+
+.challenge-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.challenge-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f8f9fa;
+}
+
+.challenge-card.completed .challenge-icon {
+    background: #d4edda;
+    color: #28a745;
+}
+
+.challenge-card.in-progress .challenge-icon {
+    background: #fff3cd;
+    color: #ffc107;
+}
+
+.challenge-info h3 {
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 1.3rem;
+}
+
+.challenge-category {
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.challenge-description {
+    color: #555;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.challenge-progress {
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.challenge-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-challenge {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-start {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-complete {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.btn-complete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-disabled {
+    background: #6c757d;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.challenge-reward {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #ffc107;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.badges-section {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.badges-section h3 {
+    color: #1976d2;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+.badge-item {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.badge-item:hover {
+    transform: translateY(-5px);
+}
+
+.badge-item.earned {
+    border: 3px solid #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+}
+
+.badge-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.badge-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.badge-description {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.leaderboard-section {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.leaderboard-section h3 {
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+}
+
+.leaderboard-rank {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+    width: 40px;
+    text-align: center;
+}
+
+.leaderboard-rank.first {
+    color: #ffc107;
+}
+
+.leaderboard-rank.second {
+    color: #6c757d;
+}
+
+.leaderboard-rank.third {
+    color: #fd7e14;
+}
+
+.leaderboard-info {
+    flex: 1;
+}
+
+.leaderboard-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.leaderboard-score {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .challenges-container {
+        padding: 10px;
+    }
+    
+    .challenges-header h1 {
+        font-size: 2rem;
+    }
+    
+    .challenges-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .challenge-actions {
+        flex-direction: column;
+    }
+    
+    .badges-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="challenges-container">
+    <div class="challenges-header">
+        <h1>🏆 Daily Challenges</h1>
+        <p>Complete challenges to earn badges and build healthy habits</p>
+    </div>
+
+    <!-- Streak Display -->
+    <div class="streak-display">
+        <div class="streak-number" id="currentStreak">0</div>
+        <div class="streak-label">Day Streak</div>
+        <div class="streak-progress">
+            <div class="streak-progress-bar" id="streakProgressBar" style="width: 0%"></div>
+        </div>
+        <p style="color: #666; margin: 0;">Keep going! Complete challenges daily to maintain your streak.</p>
+    </div>
+
+    <!-- Daily Challenges -->
+    <div class="challenges-grid">
+        <!-- Hydration Challenge -->
+        <div class="challenge-card" id="hydrationChallenge">
+            <div class="challenge-reward">+10 XP</div>
+            <div class="challenge-header">
+                <div class="challenge-icon">💧</div>
+                <div class="challenge-info">
+                    <h3>Hydration Hero</h3>
+                    <div class="challenge-category">Health</div>
+                </div>
+            </div>
+            <div class="challenge-description">
+                Drink 8 glasses of water today to stay hydrated and boost your energy levels.
+            </div>
+            <div class="challenge-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="hydrationProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="hydrationCurrent">0</span>
+                    <span>/ 8 glasses</span>
+                </div>
+            </div>
+            <div class="challenge-actions">
+                <button class="btn-challenge btn-complete" onclick="completeChallenge('hydration')">Mark Complete</button>
+            </div>
+        </div>
+
+        <!-- Steps Challenge -->
+        <div class="challenge-card" id="stepsChallenge">
+            <div class="challenge-reward">+15 XP</div>
+            <div class="challenge-header">
+                <div class="challenge-icon">🚶</div>
+                <div class="challenge-info">
+                    <h3>Step Master</h3>
+                    <div class="challenge-category">Fitness</div>
+                </div>
+            </div>
+            <div class="challenge-description">
+                Take 10,000 steps today to improve your cardiovascular health and burn calories.
+            </div>
+            <div class="challenge-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="stepsProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="stepsCurrent">0</span>
+                    <span>/ 10,000 steps</span>
+                </div>
+            </div>
+            <div class="challenge-actions">
+                <button class="btn-challenge btn-complete" onclick="completeChallenge('steps')">Mark Complete</button>
+            </div>
+        </div>
+
+        <!-- Mood Journal Challenge -->
+        <div class="challenge-card" id="moodChallenge">
+            <div class="challenge-reward">+5 XP</div>
+            <div class="challenge-header">
+                <div class="challenge-icon">😊</div>
+                <div class="challenge-info">
+                    <h3>Mindful Reflection</h3>
+                    <div class="challenge-category">Mental Health</div>
+                </div>
+            </div>
+            <div class="challenge-description">
+                Write in your mood journal today to practice mindfulness and emotional awareness.
+            </div>
+            <div class="challenge-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="moodProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="moodCurrent">0</span>
+                    <span>/ 1 entry</span>
+                </div>
+            </div>
+            <div class="challenge-actions">
+                <button class="btn-challenge btn-complete" onclick="completeChallenge('mood')">Mark Complete</button>
+            </div>
+        </div>
+
+        <!-- Breathing Exercise Challenge -->
+        <div class="challenge-card" id="breathingChallenge">
+            <div class="challenge-reward">+8 XP</div>
+            <div class="challenge-header">
+                <div class="challenge-icon">🌬️</div>
+                <div class="challenge-info">
+                    <h3>Breathing Zen</h3>
+                    <div class="challenge-category">Wellness</div>
+                </div>
+            </div>
+            <div class="challenge-description">
+                Complete a 5-minute breathing exercise to reduce stress and improve focus.
+            </div>
+            <div class="challenge-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="breathingProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="breathingCurrent">0</span>
+                    <span>/ 5 minutes</span>
+                </div>
+            </div>
+            <div class="challenge-actions">
+                <button class="btn-challenge btn-complete" onclick="completeChallenge('breathing')">Mark Complete</button>
+            </div>
+        </div>
+
+        <!-- Quote Reading Challenge -->
+        <div class="challenge-card" id="quoteChallenge">
+            <div class="challenge-reward">+3 XP</div>
+            <div class="challenge-header">
+                <div class="challenge-icon">💭</div>
+                <div class="challenge-info">
+                    <h3>Inspiration Seeker</h3>
+                    <div class="challenge-category">Motivation</div>
+                </div>
+            </div>
+            <div class="challenge-description">
+                Read 3 inspirational quotes today to boost your mood and motivation.
+            </div>
+            <div class="challenge-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="quoteProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="quoteCurrent">0</span>
+                    <span>/ 3 quotes</span>
+                </div>
+            </div>
+            <div class="challenge-actions">
+                <button class="btn-challenge btn-complete" onclick="completeChallenge('quote')">Mark Complete</button>
+            </div>
+        </div>
+
+        <!-- Sleep Challenge -->
+        <div class="challenge-card" id="sleepChallenge">
+            <div class="challenge-reward">+12 XP</div>
+            <div class="challenge-header">
+                <div class="challenge-icon">😴</div>
+                <div class="challenge-info">
+                    <h3>Sleep Champion</h3>
+                    <div class="challenge-category">Health</div>
+                </div>
+            </div>
+            <div class="challenge-description">
+                Get 7-8 hours of quality sleep tonight for optimal health and recovery.
+            </div>
+            <div class="challenge-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="sleepProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="sleepCurrent">0</span>
+                    <span>/ 8 hours</span>
+                </div>
+            </div>
+            <div class="challenge-actions">
+                <button class="btn-challenge btn-complete" onclick="completeChallenge('sleep')">Mark Complete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badges Section -->
+    <div class="badges-section">
+        <h3>🏅 Your Badges</h3>
+        <div class="badges-grid" id="badgesGrid">
+            <!-- Badges will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Leaderboard Section -->
+    <div class="leaderboard-section">
+        <h3>🏆 Weekly Leaderboard</h3>
+        <div id="leaderboardContent">
+            <!-- Leaderboard will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let challenges = {
+    hydration: { completed: false, progress: 0, max: 8 },
+    steps: { completed: false, progress: 0, max: 10000 },
+    mood: { completed: false, progress: 0, max: 1 },
+    breathing: { completed: false, progress: 0, max: 5 },
+    quote: { completed: false, progress: 0, max: 3 },
+    sleep: { completed: false, progress: 0, max: 8 }
+};
+
+let badges = [
+    { id: 'first_challenge', name: 'First Steps', description: 'Complete your first challenge', icon: '👶', earned: false },
+    { id: 'hydration_master', name: 'Hydration Master', description: 'Complete 7 hydration challenges', icon: '💧', earned: false },
+    { id: 'step_legend', name: 'Step Legend', description: 'Complete 7 step challenges', icon: '🚶', earned: false },
+    { id: 'mindful_warrior', name: 'Mindful Warrior', description: 'Complete 7 mood journal challenges', icon: '🧠', earned: false },
+    { id: 'breathing_guru', name: 'Breathing Guru', description: 'Complete 7 breathing challenges', icon: '🌬️', earned: false },
+    { id: 'quote_collector', name: 'Quote Collector', description: 'Complete 7 quote challenges', icon: '💭', earned: false },
+    { id: 'sleep_champion', name: 'Sleep Champion', description: 'Complete 7 sleep challenges', icon: '😴', earned: false },
+    { id: 'week_warrior', name: 'Week Warrior', description: 'Complete all challenges for 7 days', icon: '🏆', earned: false },
+    { id: 'streak_master', name: 'Streak Master', description: 'Maintain a 30-day streak', icon: '🔥', earned: false }
+];
+
+let currentStreak = 0;
+let totalXP = 0;
+
+// Initialize the challenges page
+document.addEventListener('DOMContentLoaded', function() {
+    loadChallengesData();
+    loadBadges();
+    updateDisplay();
+    loadLeaderboard();
+});
+
+// Load challenges data from localStorage
+function loadChallengesData() {
+    const today = new Date().toDateString();
+    const savedData = localStorage.getItem(`challenges_${today}`);
+    
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        challenges = data.challenges || challenges;
+        currentStreak = data.streak || 0;
+        totalXP = data.xp || 0;
+    }
+    
+    // Load from fitness tracker data if available
+    loadFromFitnessTracker();
+}
+
+// Load data from fitness tracker
+function loadFromFitnessTracker() {
+    const today = new Date().toDateString();
+    const trackerData = localStorage.getItem(`tracker_${today}`);
+    
+    if (trackerData) {
+        const data = JSON.parse(trackerData);
+        
+        // Update challenges based on tracker data
+        if (data.water) {
+            challenges.hydration.progress = Math.min(data.water, challenges.hydration.max);
+        }
+        
+        if (data.steps) {
+            challenges.steps.progress = Math.min(data.steps, challenges.steps.max);
+        }
+        
+        if (data.sleep) {
+            challenges.sleep.progress = Math.min(data.sleep, challenges.sleep.max);
+        }
+        
+        // Check if mood journal was used
+        if (data.mood && data.mood !== 'neutral') {
+            challenges.mood.progress = 1;
+        }
+    }
+}
+
+// Save challenges data to localStorage
+function saveChallengesData() {
+    const today = new Date().toDateString();
+    const data = {
+        challenges: challenges,
+        streak: currentStreak,
+        xp: totalXP,
+        date: today
+    };
+    
+    localStorage.setItem(`challenges_${today}`, JSON.stringify(data));
+}
+
+// Complete a challenge
+function completeChallenge(challengeType) {
+    if (challenges[challengeType] && !challenges[challengeType].completed) {
+        challenges[challengeType].completed = true;
+        challenges[challengeType].progress = challenges[challengeType].max;
+        
+        // Award XP
+        const xpReward = getXPReward(challengeType);
+        totalXP += xpReward;
+        
+        // Update streak
+        updateStreak();
+        
+        // Check for badge unlocks
+        checkBadgeUnlocks();
+        
+        saveChallengesData();
+        updateDisplay();
+        
+        // Show completion message
+        showCompletionMessage(challengeType, xpReward);
+    }
+}
+
+// Get XP reward for challenge type
+function getXPReward(challengeType) {
+    const rewards = {
+        hydration: 10,
+        steps: 15,
+        mood: 5,
+        breathing: 8,
+        quote: 3,
+        sleep: 12
+    };
+    return rewards[challengeType] || 5;
+}
+
+// Update streak
+function updateStreak() {
+    const completedToday = Object.values(challenges).filter(c => c.completed).length;
+    
+    if (completedToday >= 3) { // Complete at least 3 challenges to maintain streak
+        currentStreak++;
+    } else {
+        currentStreak = 0;
+    }
+}
+
+// Check for badge unlocks
+function checkBadgeUnlocks() {
+    // This is a simplified version - in a real app, you'd track more detailed statistics
+    const completedChallenges = Object.values(challenges).filter(c => c.completed).length;
+    
+    if (completedChallenges >= 1 && !badges[0].earned) {
+        badges[0].earned = true;
+        showBadgeUnlock(badges[0]);
+    }
+    
+    if (currentStreak >= 7 && !badges[7].earned) {
+        badges[7].earned = true;
+        showBadgeUnlock(badges[7]);
+    }
+}
+
+// Show badge unlock notification
+function showBadgeUnlock(badge) {
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #ffc107, #ff9800);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        z-index: 1000;
+        animation: slideIn 0.5s ease;
+    `;
+    
+    notification.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 10px;">${badge.icon}</div>
+        <div style="font-weight: bold; margin-bottom: 5px;">Badge Unlocked!</div>
+        <div style="font-size: 0.9rem;">${badge.name}</div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Show completion message
+function showCompletionMessage(challengeType, xp) {
+    const challengeNames = {
+        hydration: 'Hydration Hero',
+        steps: 'Step Master',
+        mood: 'Mindful Reflection',
+        breathing: 'Breathing Zen',
+        quote: 'Inspiration Seeker',
+        sleep: 'Sleep Champion'
+    };
+    
+    alert(`🎉 Challenge Complete!\n\n${challengeNames[challengeType]}\n+${xp} XP earned!`);
+}
+
+// Update display
+function updateDisplay() {
+    // Update streak
+    document.getElementById('currentStreak').textContent = currentStreak;
+    document.getElementById('streakProgressBar').style.width = `${Math.min((currentStreak / 30) * 100, 100)}%`;
+    
+    // Update each challenge
+    Object.keys(challenges).forEach(challengeType => {
+        const challenge = challenges[challengeType];
+        const card = document.getElementById(`${challengeType}Challenge`);
+        const progressBar = document.getElementById(`${challengeType}Progress`);
+        const currentSpan = document.getElementById(`${challengeType}Current`);
+        
+        // Update progress
+        const progressPercent = (challenge.progress / challenge.max) * 100;
+        progressBar.style.width = `${progressPercent}%`;
+        currentSpan.textContent = challenge.progress.toLocaleString();
+        
+        // Update card state
+        card.className = 'challenge-card';
+        if (challenge.completed) {
+            card.classList.add('completed');
+        } else if (challenge.progress > 0) {
+            card.classList.add('in-progress');
+        }
+    });
+}
+
+// Load badges
+function loadBadges() {
+    const badgesGrid = document.getElementById('badgesGrid');
+    badgesGrid.innerHTML = '';
+    
+    badges.forEach(badge => {
+        const badgeElement = document.createElement('div');
+        badgeElement.className = `badge-item ${badge.earned ? 'earned' : ''}`;
+        
+        badgeElement.innerHTML = `
+            <div class="badge-icon">${badge.icon}</div>
+            <div class="badge-name">${badge.name}</div>
+            <div class="badge-description">${badge.description}</div>
+        `;
+        
+        badgesGrid.appendChild(badgeElement);
+    });
+}
+
+// Load leaderboard (mock data)
+function loadLeaderboard() {
+    const leaderboardContent = document.getElementById('leaderboardContent');
+    
+    const mockLeaderboard = [
+        { name: 'You', score: totalXP, rank: 1 },
+        { name: 'Wellness Warrior', score: 245, rank: 2 },
+        { name: 'Health Hero', score: 198, rank: 3 },
+        { name: 'Fitness Fanatic', score: 156, rank: 4 },
+        { name: 'Mindful Master', score: 134, rank: 5 }
+    ];
+    
+    leaderboardContent.innerHTML = '';
+    
+    mockLeaderboard.forEach((player, index) => {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item';
+        
+        const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
+        
+        item.innerHTML = `
+            <div class="leaderboard-rank ${rankClass}">${player.rank}</div>
+            <div class="leaderboard-info">
+                <div class="leaderboard-name">${player.name}</div>
+                <div class="leaderboard-score">${player.score} XP</div>
+            </div>
+        `;
+        
+        leaderboardContent.appendChild(item);
+    });
+}
+
+// Add CSS animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

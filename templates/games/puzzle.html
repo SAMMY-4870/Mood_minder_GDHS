@@ -1,0 +1,674 @@
+{% extends 'base.html' %}
+{% block title %}Stress Puzzle · Games{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+<style>
+.puzzle-game {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.puzzle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.puzzle-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    width: 300px;
+    height: 300px;
+    margin: 20px auto;
+    border: 3px solid #6f42c1;
+    border-radius: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+}
+
+.puzzle-piece {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 2px solid #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.puzzle-piece:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.puzzle-piece.empty {
+    background: transparent;
+    border: 2px dashed #dee2e6;
+    cursor: default;
+}
+
+.puzzle-piece.empty:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.puzzle-piece.correct {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    animation: correctPulse 0.6s ease;
+}
+
+@keyframes correctPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.game-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 15px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #6f42c1;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.puzzle-controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.btn-puzzle {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 25px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.focus-meter {
+    width: 100%;
+    height: 25px;
+    background: #e9ecef;
+    border-radius: 15px;
+    overflow: hidden;
+    margin: 20px 0;
+    position: relative;
+}
+
+.focus-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #0abde3);
+    transition: width 0.5s ease;
+    border-radius: 15px;
+}
+
+.focus-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #6c757d;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.puzzle-types {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.puzzle-type-btn {
+    padding: 8px 20px;
+    border: 2px solid #6f42c1;
+    background: transparent;
+    color: #6f42c1;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.puzzle-type-btn.active {
+    background: #6f42c1;
+    color: white;
+}
+
+.puzzle-type-btn:hover {
+    background: #6f42c1;
+    color: white;
+}
+
+.completion-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    text-align: center;
+    z-index: 1000;
+    display: none;
+    max-width: 500px;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    display: none;
+}
+
+.hint-system {
+    margin: 20px 0;
+    padding: 15px;
+    background: #e3f2fd;
+    border-radius: 10px;
+    border-left: 4px solid #2196f3;
+}
+
+.hint-text {
+    font-style: italic;
+    color: #1976d2;
+    margin: 0;
+}
+
+.celebration {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1001;
+    display: none;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #feca57;
+    animation: confettiFall 3s linear infinite;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="puzzle-game">
+    <h2 class="mb-4">🧩 Stress Puzzle</h2>
+    <p class="lead">Solve relaxing puzzles to calm your mind and improve focus!</p>
+    
+    <div class="puzzle-types">
+        <button class="puzzle-type-btn active" data-type="sliding">Sliding Puzzle</button>
+        <button class="puzzle-type-btn" data-type="number">Number Puzzle</button>
+        <button class="puzzle-type-btn" data-type="pattern">Pattern Match</button>
+    </div>
+    
+    <div class="puzzle-container">
+        <div class="puzzle-board" id="puzzleBoard">
+            <!-- Puzzle pieces will be generated by JavaScript -->
+        </div>
+        
+        <div class="puzzle-controls">
+            <button class="btn btn-primary btn-puzzle" id="startBtn">Start Puzzle</button>
+            <button class="btn btn-secondary btn-puzzle" id="shuffleBtn" disabled>Shuffle</button>
+            <button class="btn btn-warning btn-puzzle" id="hintBtn" disabled>Hint</button>
+            <button class="btn btn-info btn-puzzle" id="solveBtn" disabled>Solve</button>
+        </div>
+        
+        <div class="hint-system" id="hintSystem" style="display: none;">
+            <p class="hint-text" id="hintText"></p>
+        </div>
+    </div>
+    
+    <div class="game-stats">
+        <div class="stat-item">
+            <div class="stat-value" id="moves">0</div>
+            <div class="stat-label">Moves</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="time">0:00</div>
+            <div class="stat-label">Time</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="hints">0</div>
+            <div class="stat-label">Hints Used</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="efficiency">--</div>
+            <div class="stat-label">Efficiency</div>
+        </div>
+    </div>
+    
+    <div class="focus-meter">
+        <div class="focus-bar" id="focusBar" style="width: 0%"></div>
+        <div class="focus-label" id="focusLabel">Focus Level: 0%</div>
+    </div>
+    
+    {% if stats %}
+    <div class="mt-4">
+        <h5>Your Statistics</h5>
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="stat-value">{{ stats.puzzles_completed or 0 }}</div>
+                <div class="stat-label">Puzzles Solved</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-value">{{ stats.total_moves or 0 }}</div>
+                <div class="stat-label">Total Moves</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-value">{{ (stats.total_time // 60) if stats.total_time else 0 }}m</div>
+                <div class="stat-label">Total Time</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-value">--</div>
+                <div class="stat-label">Best Time</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Completion Modal -->
+<div class="overlay" id="overlay"></div>
+<div class="completion-message" id="completionMessage">
+    <h3>🎉 Puzzle Solved!</h3>
+    <div id="completionResults"></div>
+    <button class="btn btn-primary" onclick="closeCompletion()">Next Puzzle</button>
+</div>
+
+<!-- Celebration Animation -->
+<div class="celebration" id="celebration"></div>
+
+<script>
+class PuzzleGame {
+    constructor() {
+        this.puzzleType = 'sliding';
+        this.board = [];
+        this.solvedBoard = [];
+        this.emptyIndex = 8;
+        this.moves = 0;
+        this.startTime = null;
+        this.timer = null;
+        this.gameActive = false;
+        this.hintsUsed = 0;
+        this.hintSystem = document.getElementById('hintSystem');
+        this.hintText = document.getElementById('hintText');
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.generatePuzzle();
+    }
+    
+    bindEvents() {
+        document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+        document.getElementById('shuffleBtn').addEventListener('click', () => this.shufflePuzzle());
+        document.getElementById('hintBtn').addEventListener('click', () => this.showHint());
+        document.getElementById('solveBtn').addEventListener('click', () => this.solvePuzzle());
+        
+        // Puzzle type selection
+        document.querySelectorAll('.puzzle-type-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.puzzle-type-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.puzzleType = e.target.dataset.type;
+                this.generatePuzzle();
+            });
+        });
+    }
+    
+    generatePuzzle() {
+        if (this.puzzleType === 'sliding') {
+            this.generateSlidingPuzzle();
+        } else if (this.puzzleType === 'number') {
+            this.generateNumberPuzzle();
+        } else if (this.puzzleType === 'pattern') {
+            this.generatePatternPuzzle();
+        }
+        this.renderBoard();
+    }
+    
+    generateSlidingPuzzle() {
+        this.board = [1, 2, 3, 4, 5, 6, 7, 8, 0]; // 0 represents empty space
+        this.solvedBoard = [...this.board];
+        this.emptyIndex = 8;
+        this.shuffleBoard();
+    }
+    
+    generateNumberPuzzle() {
+        this.board = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+        this.solvedBoard = [...this.board];
+        this.emptyIndex = 8;
+        this.shuffleBoard();
+    }
+    
+    generatePatternPuzzle() {
+        this.board = ['🔴', '🔵', '🟢', '🟡', '🟠', '🟣', '🔴', '🔵', 0];
+        this.solvedBoard = [...this.board];
+        this.emptyIndex = 8;
+        this.shuffleBoard();
+    }
+    
+    shuffleBoard() {
+        // Fisher-Yates shuffle
+        for (let i = this.board.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.board[i], this.board[j]] = [this.board[j], this.board[i]];
+        }
+        
+        // Find empty space
+        this.emptyIndex = this.board.indexOf(0);
+    }
+    
+    renderBoard() {
+        const board = document.getElementById('puzzleBoard');
+        board.innerHTML = '';
+        
+        this.board.forEach((value, index) => {
+            const piece = document.createElement('div');
+            piece.className = 'puzzle-piece';
+            piece.dataset.index = index;
+            
+            if (value === 0) {
+                piece.classList.add('empty');
+                piece.innerHTML = '';
+            } else {
+                piece.innerHTML = value;
+                piece.addEventListener('click', () => this.handlePieceClick(index));
+            }
+            
+            board.appendChild(piece);
+        });
+    }
+    
+    handlePieceClick(index) {
+        if (!this.gameActive || this.board[index] === 0) return;
+        
+        const emptyRow = Math.floor(this.emptyIndex / 3);
+        const emptyCol = this.emptyIndex % 3;
+        const pieceRow = Math.floor(index / 3);
+        const pieceCol = index % 3;
+        
+        // Check if piece is adjacent to empty space
+        const isAdjacent = (Math.abs(emptyRow - pieceRow) === 1 && emptyCol === pieceCol) ||
+                          (Math.abs(emptyCol - pieceCol) === 1 && emptyRow === pieceRow);
+        
+        if (isAdjacent) {
+            this.movePiece(index);
+        }
+    }
+    
+    movePiece(fromIndex) {
+        // Swap piece with empty space
+        [this.board[fromIndex], this.board[this.emptyIndex]] = [this.board[this.emptyIndex], this.board[fromIndex]];
+        this.emptyIndex = fromIndex;
+        this.moves++;
+        
+        document.getElementById('moves').textContent = this.moves;
+        this.updateEfficiency();
+        this.updateFocusScore();
+        this.renderBoard();
+        
+        if (this.isSolved()) {
+            this.endGame();
+        }
+    }
+    
+    isSolved() {
+        return JSON.stringify(this.board) === JSON.stringify(this.solvedBoard);
+    }
+    
+    startGame() {
+        this.gameActive = true;
+        this.moves = 0;
+        this.hintsUsed = 0;
+        this.startTime = Date.now();
+        
+        document.getElementById('moves').textContent = '0';
+        document.getElementById('hints').textContent = '0';
+        document.getElementById('efficiency').textContent = '--';
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('shuffleBtn').disabled = false;
+        document.getElementById('hintBtn').disabled = false;
+        document.getElementById('solveBtn').disabled = false;
+        
+        this.startTimer();
+        this.hideHint();
+    }
+    
+    startTimer() {
+        this.timer = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+    
+    shufflePuzzle() {
+        this.shuffleBoard();
+        this.renderBoard();
+        this.moves = 0;
+        document.getElementById('moves').textContent = '0';
+        this.hideHint();
+    }
+    
+    showHint() {
+        if (!this.gameActive || this.hintsUsed >= 3) return;
+        
+        this.hintsUsed++;
+        document.getElementById('hints').textContent = this.hintsUsed;
+        
+        // Find a piece that can be moved
+        let hintIndex = -1;
+        for (let i = 0; i < this.board.length; i++) {
+            if (this.board[i] !== 0) {
+                const emptyRow = Math.floor(this.emptyIndex / 3);
+                const emptyCol = this.emptyIndex % 3;
+                const pieceRow = Math.floor(i / 3);
+                const pieceCol = i % 3;
+                
+                const isAdjacent = (Math.abs(emptyRow - pieceRow) === 1 && emptyCol === pieceCol) ||
+                                  (Math.abs(emptyCol - pieceCol) === 1 && emptyRow === pieceRow);
+                
+                if (isAdjacent) {
+                    hintIndex = i;
+                    break;
+                }
+            }
+        }
+        
+        if (hintIndex !== -1) {
+            const piece = document.querySelector(`[data-index="${hintIndex}"]`);
+            piece.style.animation = 'correctPulse 1s ease infinite';
+            setTimeout(() => {
+                piece.style.animation = '';
+            }, 2000);
+        }
+        
+        this.hintText.textContent = this.getHintText();
+        this.hintSystem.style.display = 'block';
+        
+        setTimeout(() => {
+            this.hideHint();
+        }, 3000);
+    }
+    
+    getHintText() {
+        const hints = [
+            "Try moving pieces that are adjacent to the empty space.",
+            "Look for pieces that are in the wrong position.",
+            "Focus on getting one row or column correct at a time.",
+            "The empty space is your key to moving pieces around."
+        ];
+        return hints[Math.floor(Math.random() * hints.length)];
+    }
+    
+    hideHint() {
+        this.hintSystem.style.display = 'none';
+    }
+    
+    solvePuzzle() {
+        if (!this.gameActive) return;
+        
+        // Simple solve: just show the solution
+        this.board = [...this.solvedBoard];
+        this.renderBoard();
+        this.endGame();
+    }
+    
+    updateEfficiency() {
+        if (this.moves > 0) {
+            const timeElapsed = Math.floor((Date.now() - this.startTime) / 1000);
+            const efficiency = Math.round((this.moves / timeElapsed) * 60); // moves per minute
+            document.getElementById('efficiency').textContent = efficiency;
+        }
+    }
+    
+    updateFocusScore() {
+        // Calculate focus score based on moves and time
+        const timeElapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const expectedMoves = 20; // Expected moves for a 3x3 puzzle
+        const moveEfficiency = Math.max(0, (expectedMoves - this.moves) / expectedMoves);
+        const timeEfficiency = Math.max(0, (60 - timeElapsed) / 60);
+        const focusScore = (moveEfficiency * 0.6 + timeEfficiency * 0.4) * 100;
+        
+        document.getElementById('focusBar').style.width = `${Math.min(100, focusScore)}%`;
+        document.getElementById('focusLabel').textContent = `Focus Level: ${Math.round(focusScore)}%`;
+    }
+    
+    endGame() {
+        this.gameActive = false;
+        clearInterval(this.timer);
+        
+        const timeTaken = Math.floor((Date.now() - this.startTime) / 1000);
+        const efficiency = this.moves > 0 ? Math.round((this.moves / timeTaken) * 60) : 0;
+        
+        // Show completion message
+        document.getElementById('completionResults').innerHTML = `
+            <p><strong>Puzzle Type:</strong> ${this.puzzleType.charAt(0).toUpperCase() + this.puzzleType.slice(1)}</p>
+            <p><strong>Moves:</strong> ${this.moves}</p>
+            <p><strong>Time:</strong> ${Math.floor(timeTaken / 60)}:${(timeTaken % 60).toString().padStart(2, '0')}</p>
+            <p><strong>Hints Used:</strong> ${this.hintsUsed}</p>
+            <p><strong>Efficiency:</strong> ${efficiency} moves/min</p>
+        `;
+        
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('completionMessage').style.display = 'block';
+        
+        // Show celebration
+        this.showCelebration();
+        
+        // Submit results to server
+        this.submitResults(timeTaken, efficiency);
+    }
+    
+    showCelebration() {
+        const celebration = document.getElementById('celebration');
+        celebration.style.display = 'block';
+        
+        // Create confetti
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.animationDelay = Math.random() * 3 + 's';
+            confetti.style.backgroundColor = ['#feca57', '#ff6b6b', '#48dbfb', '#0abde3', '#4facfe'][Math.floor(Math.random() * 5)];
+            celebration.appendChild(confetti);
+        }
+        
+        setTimeout(() => {
+            celebration.style.display = 'none';
+            celebration.innerHTML = '';
+        }, 3000);
+    }
+    
+    submitResults(timeTaken, efficiency) {
+        const formData = new FormData();
+        formData.append('action', 'complete_puzzle');
+        formData.append('puzzle_type', this.puzzleType);
+        formData.append('moves', this.moves);
+        formData.append('time_taken', timeTaken);
+        formData.append('hints_used', this.hintsUsed);
+        formData.append('accuracy', 0.9); // Placeholder
+        formData.append('avg_reaction_time', 500); // Placeholder
+        formData.append('consistency', 0.8); // Placeholder
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                location.reload(); // Reload to show updated stats
+            }
+        });
+    }
+}
+
+function closeCompletion() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('completionMessage').style.display = 'none';
+}
+
+// Initialize game when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new PuzzleGame();
+});
+</script>
+{% endblock %}

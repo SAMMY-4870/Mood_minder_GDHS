@@ -34,7 +34,111 @@
   </div>
 </div>
 
-{% if user and suggestions|length %}
+{% if user %}
+<!-- Notifications and Progress Section -->
+<div class="row mb-4">
+  <div class="col-12">
+    {% if notifications %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <h5 class="alert-heading">🎉 New Achievements!</h5>
+      {% for notification in notifications %}
+        <p class="mb-1">{{ notification.icon }} {{ notification.message }}</p>
+      {% endfor %}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    {% if motivational_message %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+      <h5 class="alert-heading">💪 Motivational Message</h5>
+      <p class="mb-0">{{ motivational_message }}</p>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    {% if progress_insights %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <h5 class="alert-heading">💡 Progress Insights</h5>
+      {% for insight in progress_insights %}
+        <p class="mb-1">{{ insight }}</p>
+      {% endfor %}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+  <div class="col-md-2">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">🎮 Games</h5>
+        <p class="card-text">Play stress-relief games</p>
+        <a href="{{ url_for('games') }}" class="btn btn-primary">Play Now</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">🧠 Mood Check</h5>
+        <p class="card-text">Assess your mental health</p>
+        <a href="{{ url_for('mood_assessment') }}" class="btn btn-success">Start Assessment</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">🤖 AI Chat</h5>
+        <p class="card-text">Talk to health assistant</p>
+        <a href="{{ url_for('chatbot') }}" class="btn btn-info">Start Chat</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">📊 Dashboard</h5>
+        <p class="card-text">View your progress</p>
+        <a href="{{ url_for('activity') }}" class="btn btn-warning">View Progress</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">🏆 Leaderboard</h5>
+        <p class="card-text">See how you rank</p>
+        <a href="{{ url_for('game_leaderboard') }}" class="btn btn-secondary">View Rankings</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">🔔 Notifications</h5>
+        <p class="card-text">Your achievements</p>
+        <a href="{{ url_for('notifications') }}" class="btn btn-dark">View All</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mood Assessment Prompt -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+      <h5 class="alert-heading">🧠 Quick Mood Check</h5>
+      <p class="mb-2">Take our 5-question mood assessment to get personalized insights and recommendations for your mental health journey.</p>
+      <a href="{{ url_for('mood_assessment') }}" class="btn btn-info">Start Quick Assessment</a>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  </div>
+</div>
+
+{% if suggestions|length %}
 <div class="row justify-content-center">
   <div class="col-lg-8">
     <div class="card border-primary">
@@ -52,5 +156,6 @@
     <a class="btn btn-outline-secondary" href="{{ url_for('games') }}">Or relax with a quick game</a>
   </div>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

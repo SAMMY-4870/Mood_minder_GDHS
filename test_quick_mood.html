@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Mood Check Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { max-width: 600px; margin: 0 auto; }
+        .test-button { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px;
+        }
+        .test-results { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Quick Mood Check Test</h1>
+        <p>This is a test page to verify the Quick Mood Check functionality works correctly.</p>
+        
+        <button class="test-button" onclick="testQuickMoodCheck()">Test Quick Mood Check</button>
+        <button class="test-button" onclick="testResponseTracking()">Test Response Tracking</button>
+        <button class="test-button" onclick="clearTest()">Clear Test</button>
+        
+        <div id="testResults" class="test-results" style="display: none;">
+            <h3>Test Results:</h3>
+            <div id="testOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        // Mock the quick mood check functionality for testing
+        let quickCurrentQuestion = 1;
+        let quickTotalQuestions = 3; // Reduced for testing
+        let quickResponses = {};
+        let quickQuestions = [
+            { id: 1, question: "How are you feeling today?", options: ["Great", "Good", "Okay", "Bad", "Terrible"] },
+            { id: 2, question: "How stressed do you feel?", options: ["Not at all", "Slightly", "Moderately", "Very", "Extremely"] },
+            { id: 3, question: "How confident are you?", options: ["Not at all", "Slightly", "Moderately", "Very", "Extremely"] }
+        ];
+
+        function testQuickMoodCheck() {
+            document.getElementById('testResults').style.display = 'block';
+            document.getElementById('testOutput').innerHTML = '<p>Testing Quick Mood Check functionality...</p>';
+            
+            // Simulate answering all questions
+            quickResponses = {};
+            for (let i = 1; i <= quickTotalQuestions; i++) {
+                quickResponses[i] = Math.floor(Math.random() * 5) + 1; // Random answer 1-5
+            }
+            
+            // Test validation
+            const answeredQuestions = Object.keys(quickResponses).length;
+            const isValid = answeredQuestions === quickTotalQuestions;
+            
+            document.getElementById('testOutput').innerHTML = `
+                <p><strong>Test Results:</strong></p>
+                <p>Total Questions: ${quickTotalQuestions}</p>
+                <p>Answered Questions: ${answeredQuestions}</p>
+                <p>Validation Passed: ${isValid ? '✅ YES' : '❌ NO'}</p>
+                <p>Responses: ${JSON.stringify(quickResponses, null, 2)}</p>
+            `;
+        }
+
+        function testResponseTracking() {
+            document.getElementById('testResults').style.display = 'block';
+            
+            // Test the selectQuickOption function
+            function selectQuickOption(questionId, value, element) {
+                quickResponses[questionId] = value;
+                console.log(`Question ${questionId} answered with value ${value}`);
+                console.log('Current responses:', quickResponses);
+            }
+            
+            // Simulate clicking options
+            selectQuickOption(1, 3, null);
+            selectQuickOption(2, 1, null);
+            selectQuickOption(3, 5, null);
+            
+            const answeredQuestions = Object.keys(quickResponses).length;
+            const isValid = answeredQuestions === quickTotalQuestions;
+            
+            document.getElementById('testOutput').innerHTML = `
+                <p><strong>Response Tracking Test:</strong></p>
+                <p>Function calls made: 3</p>
+                <p>Responses stored: ${answeredQuestions}</p>
+                <p>All questions answered: ${isValid ? '✅ YES' : '❌ NO'}</p>
+                <p>Final responses: ${JSON.stringify(quickResponses, null, 2)}</p>
+            `;
+        }
+
+        function clearTest() {
+            quickResponses = {};
+            document.getElementById('testResults').style.display = 'none';
+            document.getElementById('testOutput').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

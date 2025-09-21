@@ -1,11 +1,18 @@
+# Set environment variables before any imports to prevent TensorFlow issues
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, send_file, flash, jsonify
 from pymongo import MongoClient
-import os
 import random
 import secrets
 from datetime import datetime, timedelta
 import re
 from src.recommender import build_advanced_suggestions
+from src.notifications import check_achievements, get_motivational_message, get_progress_insights, save_notification, get_user_notifications, get_weekly_progress_summary
+from src.mood_assessment import mood_assessor, HEALTH_QUESTIONS
+from src.gemini_chatbot import health_chatbot
 # Keep a minimal safety note for user protection
 SUPPORT_DISCLAIMER = (
     "If you’re in immediate danger or considering self-harm, call local emergency services or 988 (U.S.)."
@@ -83,6 +90,33 @@ def _update_game_score(email: str, game: str, inc: dict, set_min: dict | None = 
         update_doc,
         upsert=True,
     )
+
+def _log_game_session(email: str, game: str, session_data: dict):
+    """Log detailed game session data for analytics"""
+    if not email:
+        return
+    
+    session_record = {
+        "user_email": email,
+        "game": game,
+        "timestamp": datetime.utcnow(),
+        "session_data": session_data
+    }
+    db.game_sessions.insert_one(session_record)
+
+def _calculate_focus_score(session_data: dict) -> float:
+    """Calculate focus score based on game performance metrics"""
+    # Focus score calculation based on accuracy, reaction time, and consistency
+    accuracy = session_data.get('accuracy', 0)
+    reaction_time = session_data.get('avg_reaction_time', 1000)  # in ms
+    consistency = session_data.get('consistency', 0)
+    
+    # Normalize reaction time (lower is better, max 2000ms)
+    reaction_score = max(0, (2000 - reaction_time) / 2000)
+    
+    # Weighted focus score (0-100)
+    focus_score = (accuracy * 0.4 + reaction_score * 0.3 + consistency * 0.3) * 100
+    return round(focus_score, 2)
 
 
 def _get_user_game_stats(email: str, game: str) -> dict:
@@ -179,6 +213,10 @@ def build_suggestions(interests: dict) -> list[dict]:
 def home():
     user = get_current_user()
     suggestions = []
+    notifications = []
+    progress_insights = []
+    motivational_message = ""
+    
     if user:
         # Try advanced recommender first; fall back to heuristic suggestions
         try:
@@ -190,6 +228,18 @@ def home():
         else:
             interests = get_user_interests(user.get("email"))
             suggestions = build_suggestions(interests)
+        
+        # Get notifications and insights
+        try:
+            notifications = check_achievements(user.get("email"))
+            progress_insights = get_progress_insights(user.get("email"))
+            motivational_message = get_motivational_message(user.get("email"))
+            
+            # Save new notifications
+            for notification in notifications:
+                save_notification(user.get("email"), notification)
+        except Exception as e:
+            print(f"Error loading notifications: {e}")
 
     theme = {
         "brand": "#6f42c1",
@@ -198,7 +248,9 @@ def home():
         "brand4": "#feca57",
     }
 
-    return render_template("home.html", user=user, suggestions=suggestions, theme=theme)
+    return render_template("home.html", user=user, suggestions=suggestions, theme=theme, 
+                          notifications=notifications, progress_insights=progress_insights, 
+                          motivational_message=motivational_message)
 
 
 
@@ -252,6 +304,864 @@ def music():
 def games():
     user = get_current_user()
     return render_template("games/index.html", user=user)
+
+# --- ENHANCED GAME ROUTES ---
+@app.route("/games/breathing", methods=["GET", "POST"])
+def game_breathing():
+    user = get_current_user()
+    if not user:
+        flash("Please login to play games.", "warning")
+        return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "complete_session":
+            session_data = {
+                "duration": int(request.form.get("duration", 0)),
+                "cycles_completed": int(request.form.get("cycles", 0)),
+                "focus_score": _calculate_focus_score({
+                    "accuracy": 1.0,  # Breathing exercises are about completion
+                    "avg_reaction_time": 0,
+                    "consistency": float(request.form.get("consistency", 0.8))
+                })
+            }
+            _log_game_session(user["email"], "breathing", session_data)
+            _update_game_score(user["email"], "breathing", {
+                "sessions_completed": 1,
+                "total_duration": session_data["duration"],
+                "total_cycles": session_data["cycles_completed"]
+            })
+            log_activity(user["email"], "breathing_completed", f"Completed {session_data['cycles_completed']} breathing cycles")
+            flash("Great job! Your breathing session has been recorded.", "success")
+    
+    stats = _get_user_game_stats(user["email"], "breathing")
+    return render_template("games/breathing.html", user=user, stats=stats)
+
+@app.route("/games/memory", methods=["GET", "POST"])
+def game_memory():
+    user = get_current_user()
+    if not user:
+        flash("Please login to play games.", "warning")
+        return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "complete_game":
+            session_data = {
+                "moves": int(request.form.get("moves", 0)),
+                "time_taken": int(request.form.get("time_taken", 0)),
+                "pairs_found": int(request.form.get("pairs_found", 0)),
+                "accuracy": float(request.form.get("accuracy", 0)),
+                "focus_score": _calculate_focus_score({
+                    "accuracy": float(request.form.get("accuracy", 0)),
+                    "avg_reaction_time": int(request.form.get("avg_reaction_time", 1000)),
+                    "consistency": float(request.form.get("consistency", 0.7))
+                })
+            }
+            _log_game_session(user["email"], "memory", session_data)
+            _update_game_score(user["email"], "memory", {
+                "games_played": 1,
+                "total_moves": session_data["moves"],
+                "total_time": session_data["time_taken"],
+                "pairs_found": session_data["pairs_found"]
+            })
+            log_activity(user["email"], "memory_completed", f"Memory game: {session_data['pairs_found']} pairs in {session_data['moves']} moves")
+            flash("Excellent memory work! Your performance has been recorded.", "success")
+    
+    stats = _get_user_game_stats(user["email"], "memory")
+    return render_template("games/memory.html", user=user, stats=stats)
+
+@app.route("/games/reaction", methods=["GET", "POST"])
+def game_reaction():
+    user = get_current_user()
+    if not user:
+        flash("Please login to play games.", "warning")
+        return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "complete_test":
+            session_data = {
+                "avg_reaction_time": float(request.form.get("avg_reaction_time", 0)),
+                "best_time": float(request.form.get("best_time", 0)),
+                "worst_time": float(request.form.get("worst_time", 0)),
+                "rounds": int(request.form.get("rounds", 0)),
+                "focus_score": _calculate_focus_score({
+                    "accuracy": 1.0,  # Reaction time games are about speed
+                    "avg_reaction_time": float(request.form.get("avg_reaction_time", 0)),
+                    "consistency": float(request.form.get("consistency", 0.8))
+                })
+            }
+            _log_game_session(user["email"], "reaction", session_data)
+            _update_game_score(user["email"], "reaction", {
+                "tests_completed": 1,
+                "total_rounds": session_data["rounds"],
+                "best_time": session_data["best_time"]
+            })
+            log_activity(user["email"], "reaction_completed", f"Reaction test: {session_data['avg_reaction_time']:.0f}ms average")
+            flash("Great reflexes! Your reaction time has been recorded.", "success")
+    
+    stats = _get_user_game_stats(user["email"], "reaction")
+    return render_template("games/reaction.html", user=user, stats=stats)
+
+@app.route("/games/puzzle", methods=["GET", "POST"])
+def game_puzzle():
+    user = get_current_user()
+    if not user:
+        flash("Please login to play games.", "warning")
+        return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "complete_puzzle":
+            session_data = {
+                "puzzle_type": request.form.get("puzzle_type", "sliding"),
+                "moves": int(request.form.get("moves", 0)),
+                "time_taken": int(request.form.get("time_taken", 0)),
+                "hints_used": int(request.form.get("hints_used", 0)),
+                "focus_score": _calculate_focus_score({
+                    "accuracy": float(request.form.get("accuracy", 0.9)),
+                    "avg_reaction_time": int(request.form.get("avg_reaction_time", 500)),
+                    "consistency": float(request.form.get("consistency", 0.8))
+                })
+            }
+            _log_game_session(user["email"], "puzzle", session_data)
+            _update_game_score(user["email"], "puzzle", {
+                "puzzles_completed": 1,
+                "total_moves": session_data["moves"],
+                "total_time": session_data["time_taken"]
+            })
+            log_activity(user["email"], "puzzle_completed", f"Puzzle solved: {session_data['puzzle_type']} in {session_data['moves']} moves")
+            flash("Puzzle solved! Your problem-solving skills are improving.", "success")
+    
+    stats = _get_user_game_stats(user["email"], "puzzle")
+    return render_template("games/puzzle.html", user=user, stats=stats)
+
+@app.route("/games/leaderboard")
+def game_leaderboard():
+    user = get_current_user()
+    
+    # Get leaderboards for different games
+    leaderboards = {}
+    games = ["breathing", "memory", "reaction", "puzzle", "rps", "guess", "trivia"]
+    
+    for game in games:
+        if game == "breathing":
+            leaderboards[game] = list(db.game_scores.find({"game": game}).sort("total_cycles", -1).limit(10))
+        elif game == "memory":
+            leaderboards[game] = list(db.game_scores.find({"game": game}).sort("pairs_found", -1).limit(10))
+        elif game == "reaction":
+            leaderboards[game] = list(db.game_scores.find({"game": game}).sort("best_time", 1).limit(10))  # Lower is better
+        elif game == "puzzle":
+            leaderboards[game] = list(db.game_scores.find({"game": game}).sort("total_moves", 1).limit(10))  # Lower is better
+        elif game == "rps":
+            leaderboards[game] = list(db.game_scores.find({"game": game}).sort("wins", -1).limit(10))
+        elif game == "guess":
+            leaderboards[game] = list(db.game_scores.find({"game": game}).sort("wins", -1).limit(10))
+        elif game == "trivia":
+            leaderboards[game] = list(db.game_scores.find({"game": game}).sort("correct", -1).limit(10))
+    
+    return render_template("games/leaderboard.html", user=user, leaderboards=leaderboards)
+
+# --- EXISTING GAME ROUTES WITH ENHANCED TRACKING ---
+@app.route("/games/rps", methods=["GET", "POST"])
+def game_rps():
+    user = get_current_user()
+    if not user:
+        flash("Please login to play games.", "warning")
+        return redirect(url_for("login"))
+    
+    player = None
+    computer = None
+    result = None
+    
+    if request.method == "POST":
+        choice = request.form.get("choice")
+        if choice:
+            choices = ["rock", "paper", "scissors"]
+            computer_choice = random.choice(choices)
+            player = choice
+            computer = computer_choice
+            
+            if player == computer:
+                result = "It's a draw!"
+                _update_game_score(user["email"], "rps", {"draws": 1})
+                log_activity(user["email"], "rps_draw", f"Player: {player}, Computer: {computer}")
+            elif (player == "rock" and computer == "scissors") or \
+                 (player == "paper" and computer == "rock") or \
+                 (player == "scissors" and computer == "paper"):
+                result = "You win!"
+                _update_game_score(user["email"], "rps", {"wins": 1})
+                log_activity(user["email"], "rps_win", f"Player: {player}, Computer: {computer}")
+            else:
+                result = "You lose!"
+                _update_game_score(user["email"], "rps", {"losses": 1})
+                log_activity(user["email"], "rps_loss", f"Player: {player}, Computer: {computer}")
+            
+            _update_game_score(user["email"], "rps", {"games_played": 1})
+    
+    stats = _get_user_game_stats(user["email"], "rps")
+    return render_template("games/rps.html", user=user, player=player, computer=computer, result=result, stats=stats)
+
+@app.route("/games/guess", methods=["GET", "POST"])
+def game_guess():
+    user = get_current_user()
+    if not user:
+        flash("Please login to play games.", "warning")
+        return redirect(url_for("login"))
+    
+    feedback = None
+    won = False
+    attempts = 0
+    target = None
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "reset":
+            session.pop("target_number", None)
+            session.pop("attempts", None)
+            return redirect(url_for("game_guess"))
+        elif action == "guess":
+            guess = int(request.form.get("guess", 0))
+            target = session.get("target_number")
+            attempts = session.get("attempts", 0)
+            
+            if not target:
+                target = random.randint(1, 100)
+                session["target_number"] = target
+                attempts = 0
+            
+            attempts += 1
+            session["attempts"] = attempts
+            
+            if guess < target:
+                feedback = "Too low! Try again."
+            elif guess > target:
+                feedback = "Too high! Try again."
+            else:
+                feedback = f"Correct! You guessed it in {attempts} attempts."
+                won = True
+                _update_game_score(user["email"], "guess", {
+                    "wins": 1,
+                    "total_attempts": attempts
+                }, {"best_attempts": attempts})
+                log_activity(user["email"], "guess_won", f"Guessed {target} in {attempts} attempts")
+                session.pop("target_number", None)
+                session.pop("attempts", None)
+    
+    stats = _get_user_game_stats(user["email"], "guess")
+    return render_template("games/guess_number.html", user=user, feedback=feedback, won=won, attempts=attempts, stats=stats)
+
+@app.route("/games/trivia", methods=["GET", "POST"])
+def game_trivia():
+    user = get_current_user()
+    if not user:
+        flash("Please login to play games.", "warning")
+        return redirect(url_for("login"))
+    
+    # Trivia questions
+    questions = [
+        {"q": "What is the capital of France?", "a": "paris"},
+        {"q": "What is 2 + 2?", "a": "4"},
+        {"q": "What is the largest planet in our solar system?", "a": "jupiter"},
+        {"q": "Who painted the Mona Lisa?", "a": "leonardo da vinci"},
+        {"q": "What is the smallest country in the world?", "a": "vatican"},
+        {"q": "What is the chemical symbol for gold?", "a": "au"},
+        {"q": "In what year did World War II end?", "a": "1945"},
+        {"q": "What is the fastest land animal?", "a": "cheetah"},
+        {"q": "What is the largest ocean on Earth?", "a": "pacific"},
+        {"q": "Who wrote 'Romeo and Juliet'?", "a": "shakespeare"}
+    ]
+    
+    question = random.choice(questions)
+    feedback = None
+    
+    if request.method == "POST":
+        answer = request.form.get("answer", "").strip().lower()
+        if answer == question["a"]:
+            feedback = "Correct! Well done!"
+            _update_game_score(user["email"], "trivia", {"correct": 1})
+            log_activity(user["email"], "trivia_correct", f"Question: {question['q']}")
+        else:
+            feedback = f"Incorrect! The correct answer was: {question['a']}"
+            _update_game_score(user["email"], "trivia", {"incorrect": 1})
+            log_activity(user["email"], "trivia_incorrect", f"Question: {question['q']}")
+        
+        _update_game_score(user["email"], "trivia", {"games_played": 1})
+        question = random.choice(questions)  # New question for next round
+    
+    stats = _get_user_game_stats(user["email"], "trivia")
+    return render_template("games/trivia.html", user=user, question=question, feedback=feedback, stats=stats)
+
+# --- NOTIFICATION ROUTES ---
+@app.route("/notifications")
+def notifications():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    user = get_current_user()
+    user_notifications = get_user_notifications(user["email"])
+    
+    return render_template("notifications.html", user=user, notifications=user_notifications)
+
+@app.route("/api/notifications/check")
+def check_user_notifications():
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    user = get_current_user()
+    new_achievements = check_achievements(user["email"])
+    
+    # Save new notifications
+    for notification in new_achievements:
+        save_notification(user["email"], notification)
+    
+    return jsonify({
+        "notifications": new_achievements,
+        "motivational_message": get_motivational_message(user["email"]),
+        "insights": get_progress_insights(user["email"])
+    })
+
+@app.route("/api/notifications/mark-read", methods=["POST"])
+def mark_notification_read():
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    data = request.get_json()
+    notification_id = data.get("notification_id")
+    
+    if notification_id:
+        from bson import ObjectId
+        db.notifications.update_one(
+            {"_id": ObjectId(notification_id)},
+            {"$set": {"read": True}}
+        )
+    
+    return jsonify({"success": True})
+
+@app.route("/api/progress/summary")
+def get_progress_summary():
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    user = get_current_user()
+    summary = get_weekly_progress_summary(user["email"])
+    
+    return jsonify(summary)
+
+# --- MOOD ASSESSMENT ROUTES ---
+@app.route("/mood-assessment")
+def mood_assessment():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    try:
+        user = get_current_user()
+        # Get 5 random questions for quick assessment
+        quick_questions = mood_assessor.get_random_questions(5)
+        
+        return render_template("mood_assessment.html", user=user, questions=HEALTH_QUESTIONS, quick_questions=quick_questions)
+    except Exception as e:
+        print(f"Error in mood assessment route: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error loading mood assessment: {str(e)}", "error")
+        return redirect(url_for("home"))
+
+@app.route("/api/mood-assessment", methods=["POST"])
+def api_mood_assessment():
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    try:
+        user = get_current_user()
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+            
+        responses = data.get("responses", [])
+        is_quick = data.get("is_quick", False)
+        game_data = data.get("game_data", None)
+        
+        print(f"Received mood assessment data: {type(responses)} with {len(responses) if isinstance(responses, (list, dict)) else 'unknown'} items")
+        print(f"Responses: {responses}")
+        
+        if not responses:
+            return jsonify({"error": "No responses provided"}), 400
+        
+        if game_data:
+            print(f"Game data included: {list(game_data.keys())}")
+        
+        # Get enhanced analysis with game data
+        analysis = mood_assessor.get_mood_analysis(responses, game_data)
+        print(f"Analysis generated: {analysis['mood_category']}")
+        
+        # Log detected conditions
+        if analysis.get('detected_conditions'):
+            print(f"Detected conditions: {list(analysis['detected_conditions'].keys())}")
+        
+        # Save assessment with game data
+        assessment_data = {
+            "user_email": user["email"],
+            "responses": responses,
+            "analysis": analysis,
+            "game_data": game_data,
+            "timestamp": datetime.utcnow()
+        }
+        db.mood_assessments.insert_one(assessment_data)
+        print("Assessment saved to database")
+        
+        # Log activity
+        activity_msg = f"Score: {analysis['overall_score']}, Category: {analysis['mood_category']}"
+        if analysis.get('detected_conditions'):
+            conditions = list(analysis['detected_conditions'].keys())
+            activity_msg += f", Conditions: {', '.join(conditions)}"
+        log_activity(user["email"], "mood_assessment_completed", activity_msg)
+        
+        return jsonify({
+            "success": True,
+            "analysis": analysis
+        })
+    
+    except Exception as e:
+        print(f"Error in mood assessment API: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }), 500
+
+@app.route("/api/debug-mood", methods=["POST"])
+def debug_mood_assessment():
+    """Debug endpoint for mood assessment"""
+    try:
+        data = request.get_json()
+        responses = data.get("responses", {})
+        
+        # Test the mood assessor directly
+        analysis = mood_assessor.get_mood_analysis(responses)
+        
+        return jsonify({
+            "success": True,
+            "debug_info": {
+                "responses_type": type(responses).__name__,
+                "responses_count": len(responses) if isinstance(responses, (list, dict)) else 0,
+                "analysis_keys": list(analysis.keys()) if isinstance(analysis, dict) else [],
+                "mood_category": analysis.get('mood_category', 'Unknown'),
+                "overall_score": analysis.get('overall_score', 'Unknown')
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }), 500
+
+@app.route("/api/game-performance", methods=["POST"])
+def api_game_performance():
+    """Track game performance for mood analysis integration"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    try:
+        user = get_current_user()
+        data = request.get_json()
+        game_type = data.get("game_type")
+        performance_data = data.get("performance_data", {})
+        
+        if not game_type:
+            return jsonify({"error": "Game type required"}), 400
+        
+        # Log game performance
+        _log_game_session(user["email"], game_type, performance_data)
+        
+        # Update game scores
+        if "score" in performance_data:
+            _update_game_score(user["email"], game_type, {"score": performance_data["score"]})
+        
+        # Log activity
+        log_activity(user["email"], f"game_{game_type}_played", f"Performance: {performance_data}")
+        
+        return jsonify({"success": True, "message": "Game performance tracked"})
+    
+    except Exception as e:
+        print(f"Error tracking game performance: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/mental-health-guidance", methods=["POST"])
+def api_mental_health_guidance():
+    """Get personalized mental health guidance based on assessment and game performance"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    try:
+        user = get_current_user()
+        data = request.get_json()
+        condition = data.get("condition")
+        
+        if not condition:
+            return jsonify({"error": "Mental health condition required"}), 400
+        
+        # Get guidance based on condition
+        guidance = {
+            "depression": {
+                "immediate_actions": [
+                    "Reach out to a trusted friend or family member",
+                    "Practice deep breathing exercises",
+                    "Go for a short walk outside",
+                    "Listen to uplifting music"
+                ],
+                "long_term_strategies": [
+                    "Consider professional therapy or counseling",
+                    "Establish a regular sleep schedule",
+                    "Engage in regular physical exercise",
+                    "Practice mindfulness and meditation"
+                ],
+                "warning_signs": [
+                    "Persistent sadness or hopelessness",
+                    "Loss of interest in activities",
+                    "Changes in sleep or appetite",
+                    "Thoughts of self-harm"
+                ],
+                "resources": [
+                    "National Suicide Prevention Lifeline: 988",
+                    "Crisis Text Line: Text HOME to 741741",
+                    "Find a therapist: psychologytoday.com"
+                ]
+            },
+            "anxiety": {
+                "immediate_actions": [
+                    "Practice 4-7-8 breathing technique",
+                    "Use grounding techniques (5-4-3-2-1 method)",
+                    "Take a break from stressful situations",
+                    "Practice progressive muscle relaxation"
+                ],
+                "long_term_strategies": [
+                    "Consider cognitive behavioral therapy (CBT)",
+                    "Limit caffeine and alcohol intake",
+                    "Establish a regular routine",
+                    "Practice mindfulness meditation"
+                ],
+                "warning_signs": [
+                    "Excessive worry or fear",
+                    "Restlessness or feeling on edge",
+                    "Panic attacks",
+                    "Avoidance of certain situations"
+                ],
+                "resources": [
+                    "Anxiety and Depression Association of America",
+                    "Find a therapist: goodtherapy.org",
+                    "Mindfulness apps: Headspace, Calm"
+                ]
+            }
+        }
+        
+        condition_guidance = guidance.get(condition, {
+            "immediate_actions": ["Seek professional help", "Practice self-care"],
+            "long_term_strategies": ["Consider therapy", "Build support network"],
+            "warning_signs": ["Monitor symptoms", "Seek help if worsening"],
+            "resources": ["Contact mental health professional"]
+        })
+        
+        return jsonify({
+            "success": True,
+            "guidance": condition_guidance,
+            "condition": condition
+        })
+    
+    except Exception as e:
+        print(f"Error getting mental health guidance: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/mood-history")
+def mood_history():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    user = get_current_user()
+    assessments = mood_assessor.get_user_mood_history(user["email"], 30)
+    
+    return render_template("mood_history.html", user=user, assessments=assessments)
+
+@app.route("/mental-health-guidance")
+def mental_health_guidance():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    user = get_current_user()
+    return render_template("mental_health_guidance.html", user=user)
+
+@app.route("/wellness-center")
+def wellness_center():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    user = get_current_user()
+    return render_template("wellness_center.html", user=user)
+
+@app.route("/fitness-tracker")
+def fitness_tracker():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    user = get_current_user()
+    return render_template("fitness_tracker.html", user=user)
+
+@app.route("/daily-challenges")
+def daily_challenges():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    user = get_current_user()
+    return render_template("daily_challenges.html", user=user)
+
+@app.route("/api/user-assessment-history")
+def api_user_assessment_history():
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    try:
+        user = get_current_user()
+        assessments = mood_assessor.get_user_mood_history(user["email"], 7)  # Last 7 days
+        
+        return jsonify({
+            "success": True,
+            "assessments": assessments
+        })
+    
+    except Exception as e:
+        print(f"Error getting assessment history: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# --- CHATBOT ROUTES ---
+@app.route("/chatbot")
+def chatbot():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    user = get_current_user()
+    return render_template("chatbot.html", user=user)
+
+@app.route("/api/chatbot", methods=["POST"])
+def api_chatbot():
+    # Allow anonymous users for testing
+    user = None
+    user_email = None
+    user_mood = "moderate"
+    
+    if require_login():
+        user = get_current_user()
+        user_email = user["email"]
+        user_mood = user.get("current_mood", "moderate")
+    else:
+        # Anonymous user - use session ID as identifier
+        user_email = f"anonymous_{session.get('session_id', 'unknown')}"
+    
+    data = request.get_json()
+    message = data.get("message", "").strip()
+    conversation_id = data.get("conversation_id")
+    
+    if not message:
+        return jsonify({
+            "success": False,
+            "error": "Message cannot be empty"
+        })
+    
+    try:
+        # Generate response
+        response_data = health_chatbot.generate_response(
+            message, 
+            user_email, 
+            conversation_id
+        )
+        
+        # Get quick responses based on user's mood
+        quick_responses = health_chatbot.get_quick_responses(user_mood)
+        
+        return jsonify({
+            "success": True,
+            "response": response_data["response"],
+            "quick_responses": quick_responses[:5],  # Limit to 5 quick responses
+            "timestamp": response_data["timestamp"].isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Error in chatbot: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": "Chatbot service unavailable"
+        })
+
+@app.route("/api/chatbot/insights")
+def api_chatbot_insights():
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    user = get_current_user()
+    
+    try:
+        insights = health_chatbot.generate_health_insights(user["email"])
+        return jsonify({
+            "success": True,
+            "insights": insights
+        })
+        
+    except Exception as e:
+        print(f"Error generating insights: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to generate insights"
+        })
+
+@app.route("/api/chatbot/resources")
+def api_chatbot_resources():
+    topic = request.args.get("topic", "general")
+    
+    try:
+        resources = health_chatbot.get_mental_health_resources(topic)
+        return jsonify({
+            "success": True,
+            "resources": resources
+        })
+        
+    except Exception as e:
+        print(f"Error getting resources: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to fetch resources"
+        })
+
+# --- ENHANCED HEALTH & WELLNESS API ENDPOINTS ---
+
+@app.route("/api/health-tips")
+def api_health_tips():
+    """Get daily health and wellness tips"""
+    category = request.args.get("category", "general")
+    
+    try:
+        tips = health_chatbot.get_daily_health_tips(category)
+        return jsonify({
+            "success": True,
+            "tips": tips,
+            "category": category
+        })
+    except Exception as e:
+        print(f"Error getting health tips: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to fetch health tips"
+        })
+
+@app.route("/api/fitness-suggestions")
+def api_fitness_suggestions():
+    """Get personalized fitness suggestions"""
+    fitness_level = request.args.get("level", "beginner")
+    
+    try:
+        suggestions = health_chatbot.get_fitness_suggestions(fitness_level)
+        return jsonify({
+            "success": True,
+            "suggestions": suggestions,
+            "level": fitness_level
+        })
+    except Exception as e:
+        print(f"Error getting fitness suggestions: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to fetch fitness suggestions"
+        })
+
+@app.route("/api/sleep-tips")
+def api_sleep_tips():
+    """Get sleep improvement tips"""
+    try:
+        tips = health_chatbot.get_sleep_improvement_tips()
+        return jsonify({
+            "success": True,
+            "tips": tips
+        })
+    except Exception as e:
+        print(f"Error getting sleep tips: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to fetch sleep tips"
+        })
+
+@app.route("/api/nutrition-guidance")
+def api_nutrition_guidance():
+    """Get nutrition guidance based on goals"""
+    goal = request.args.get("goal", "general_health")
+    
+    try:
+        guidance = health_chatbot.get_nutrition_guidance(goal)
+        return jsonify({
+            "success": True,
+            "guidance": guidance,
+            "goal": goal
+        })
+    except Exception as e:
+        print(f"Error getting nutrition guidance: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to fetch nutrition guidance"
+        })
+
+@app.route("/api/mood-activities")
+def api_mood_activities():
+    """Get mood-based activity suggestions"""
+    mood = request.args.get("mood", "moderate")
+    
+    try:
+        activities = health_chatbot.get_mood_based_activities(mood)
+        return jsonify({
+            "success": True,
+            "activities": activities,
+            "mood": mood
+        })
+    except Exception as e:
+        print(f"Error getting mood activities: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to fetch mood activities"
+        })
+
+@app.route("/api/symptom-guidance", methods=["POST"])
+def api_symptom_guidance():
+    """Get general health guidance for symptoms (not diagnosis)"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"})
+    
+    try:
+        data = request.get_json()
+        symptoms = data.get("symptoms", "")
+        
+        if not symptoms:
+            return jsonify({
+                "success": False,
+                "error": "Symptoms required"
+            })
+        
+        guidance = health_chatbot.get_symptom_guidance(symptoms)
+        
+        return jsonify({
+            "success": True,
+            "guidance": guidance,
+            "symptoms": symptoms,
+            "disclaimer": "This is general health guidance only. Always consult a healthcare provider for medical concerns."
+        })
+        
+    except Exception as e:
+        print(f"Error getting symptom guidance: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Unable to process symptom guidance"
+        })
 
 
 @app.route("/upload", methods=["GET", "POST"])
@@ -491,7 +1401,8 @@ def activity():
 
 
 def _csv(iter_rows, headers):
-    import csv, io
+    import csv
+    import io
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(headers)
@@ -807,275 +1718,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     # On Windows, the reloader and multi-threading can cause non-MainThread execution.
     # Disable both for stability.
-    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=True, threaded=True);
-def register_user(first_name, last_name, email, password):
-    """Register a new user. Returns (success, message)."""
-    if db.users.find_one({"email": email}):
-        return False, "Email already registered."
-    db.users.insert_one({
-        "first_name": first_name,
-        "last_name": last_name,
-        "email": email,
-        "password": password
-    })
-    return True, "Registration successful!"
-def login_user(email, password):
-    """Login a user. Returns (success, message)."""
-    user = db.users.find_one({"email": email, "password": password})
-    if user:
-        return True, "Login successful!"
-    return False, "Invalid email or password."
-def load_quotes():
-    return list(db.quotes.find({}, {"_id": 0}))
-def save_quote(quote, author):
-    db.quotes.insert_one({"quote": quote, "author": author})
-def load_images():
-    return list(db.images.find({}, {"_id": 0}))
-def save_image(file_name):
-    db.images.insert_one({"file": file_name})
-def get_random_image():
-    images = load_images()
-    if images:
-        img = random.choice(images)
-        img_path = os.path.join(IMAGES_FOLDER, img["file"])
-        if os.path.exists(img_path):
-            return Image.open(img_path)
-    return None
-def load_songs():
-    return list(db.songs.find({}, {"_id": 0}))
-def save_song(title, artist, file_name):
-    db.songs.insert_one({"title": title, "artist": artist, "file": file_name})
-# --- STREAMLIT APP ---
-st.set_page_config(page_title="Mood Minder", page_icon="😊", layout="centered")
-# --- AUTHENTICATION ---
-st.sidebar.title("User Account")
-auth_option = st.sidebar.radio("Login / Register", ["Login", "Register"], key="auth_option")
-current_user = None
-if auth_option == "Register":
-    st.sidebar.subheader("Create a new account")
-    first_name = st.sidebar.text_input("First Name")
-    last_name = st.sidebar.text_input("Last Name")
-    email = st.sidebar.text_input("Email")
-    password = st.sidebar.text_input("Password", type="password")
-    confirm_password = st.sidebar.text_input("Confirm Password", type="password")
-    if st.sidebar.button("Register"):
-        if password == confirm_password:
-            success, message = register_user(first_name, last_name, email, password)
-            st.sidebar.success(message) if success else st.sidebar.error(message)
-        else:
-            st.sidebar.error("Passwords do not match.")
-elif auth_option == "Login":
-    st.sidebar.subheader("Login to your account")
-    email = st.sidebar.text_input("Email")
-    password = st.sidebar.text_input("Password", type="password")
-    if st.sidebar.button("Login"):
-        success, message = login_user(email, password)
-        if success:
-            current_user = db.users.find_one({"email": email}, {"_id": 0, "password": 0})
-            st.sidebar.success(message)
-        else:
-            st.sidebar.error(message)
-if current_user:
-    st.sidebar.markdown(f"**Logged in as:** {current_user.get('first_name', '')} {current_user.get('last_name', '')}")
-    if st.sidebar.button("Logout"):
-        current_user = None
-        st.sidebar.info("You have been logged out.")
-# --- CONTENT HELPERS ---   
-def display_quote(quote):
-    st.markdown(f"**{quote['quote']}**")
-    st.markdown(f"*{quote['author']}*")
-def display_image(image):
-    st.image(image, use_column_width=True)
-def display_song(song):
-    st.markdown(f"**{song['title']}** by *{song['artist']}*")
-    audio_path = os.path.join(MUSIC_FOLDER, song['file'])
-    if os.path.exists(audio_path):
-        audio_file = open(audio_path, 'rb')
-        audio_bytes = audio_file.read()
-        st.audio(audio_bytes, format='audio/mp3')
-# --- MAIN APP ---
-st.title("😊 Mood Minder")
-st.markdown("Your personal space for happiness and relaxation.")
-if current_user:
-    st.success(f"Welcome back, {current_user.get('first_name', '')}!")
-    tab = st.selectbox("Choose an activity", ["Quotes", "Images", "Music", "Games", "Upload"])
-    if tab == "Quotes":
-        st.header("Daily Quotes")
-        if st.button("Show Random Quote"):
-            quotes = load_quotes()
-            if quotes:
-                quote = random.choice(quotes)
-                display_quote(quote)
-            else:
-                st.info("No quotes available. Please upload some!")
-    elif tab == "Images":
-        st.header("Happy Images")
-        if st.button("Show Random Image"):
-            image = get_random_image()
-            if image:
-                display_image(image)
-            else:
-                st.info("No images available. Please upload some!")
-    elif tab == "Music":
-        st.header("Relaxing Music")
-        if st.button("Play Random Song"):
-            songs = load_songs()
-            if songs:
-                song = random.choice(songs)
-                display_song(song)
-            else:
-                st.info("No songs available. Please upload some!")
-    elif tab == "Games":
-        st.header("Mini Games")
-        game_choice = st.selectbox("Select a game", ["Rock-Paper-Scissors", "Guess the Number", "Trivia"])
-        if game_choice == "Rock-Paper-Scissors":
-            st.subheader("Rock-Paper-Scissors")
-            user_choice = st.radio("Your choice:", ["rock", "paper", "scissors"])
-            if st.button("Play"):
-                computer_choice = random.choice(["rock", "paper", "scissors"])
-                st.write(f"Computer chose: {computer_choice}")
-                if user_choice == computer_choice:
-                    st.info("It's a draw!")
-                elif (user_choice == "rock" and computer_choice == "scissors") or \
-                     (user_choice == "paper" and computer_choice == "rock") or \
-                     (user_choice == "scissors" and computer_choice == "paper"):    
-                    st.success("You win!")
-                else:
-                    st.error("You lose!")       
-        elif game_choice == "Guess the Number":
-            st.subheader("Guess the Number")
-            if 'target_number' not in st.session_state:
-                st.session_state.target_number = random.randint(1, 100)
-                st.session_state.attempts = 0
-            guess = st.number_input("Enter your guess (1-100):", min_value=1, max_value=100, step=1)
-            if st.button("Submit Guess"):
-                st.session_state.attempts += 1
-                if guess < st.session_state.target_number:
-                    st.warning("Too low!")
-                elif guess > st.session_state.target_number:
-                    st.warning("Too high!")
-                else:
-                    st.success(f"Correct! You guessed it in {st.session_state.attempts} attempts.")
-                    st.session_state.pop('target_number')
-                    st.session_state.pop('attempts')
-        elif game_choice == "Trivia":
-            st.subheader("Trivia")
-            trivia_q = random.choice(TRIVIA_QUESTIONS)
-            user_answer = st.text_input(trivia_q["q"])
-            if st.button("Submit Answer"):
-                if user_answer.strip().lower() == trivia_q["a"]:
-                    st.success("Correct!")
-                else:
-                    st.error(f"Incorrect! The correct answer was: {trivia_q['a']}")
-    elif tab == "Upload":
-        st.header("Upload Content")
-        upload_type = st.selectbox("What would you like to upload?", ["Quote", "Image", "Song"])
-        if upload_type == "Quote":
-            quote_text = st.text_area("Quote")
-            author_name = st.text_input("Author")
-            if st.button("Upload Quote"):
-                if quote_text.strip():
-                    save_quote(quote_text.strip(), author_name.strip() or "Unknown")
-                    st.success("Quote uploaded!")
-                else:
-                    st.error("Quote text cannot be empty.")
-        elif upload_type == "Image":
-            image_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
-            if st.button("Upload Image"):
-                if image_file:
-                    os.makedirs(IMAGES_FOLDER, exist_ok=True)
-                    file_path = os.path.join(IMAGES_FOLDER, image_file.name)
-                    with open(file_path, "wb") as f:
-                        f.write(image_file.getbuffer())
-                    save_image(image_file.name)
-                    st.success("Image uploaded!")
-                else:
-                    st.error("Please select an image file.")
-        elif upload_type == "Song":
-            song_title = st.text_input("Song Title")
-            artist_name = st.text_input("Artist")
-            song_file = st.file_uploader("Choose a song file", type=["mp3", "wav"])
-            if st.button("Upload Song"):
-                if song_title.strip() and song_file:
-                    os.makedirs(MUSIC_FOLDER, exist_ok=True)
-                    file_path = os.path.join(MUSIC_FOLDER, song_file.name)
-                    with open(file_path, "wb") as f:
-                        f.write(song_file.getbuffer())
-                    save_song(song_title.strip(), artist_name.strip() or "Unknown", song_file.name)
-                    st.success("Song uploaded!")
-                else:
-                    st.error("Please provide a song title and select a song file.")
-else:
-    st.info("Please login or register to access more features.")
-    menu = st.sidebar.selectbox("Menu", ["🏠 Home", "📸 Images", "🎵 Music", "⬆️ Upload", "Dashboard"])
-    page = "Main" if menu == "🏠 Home" else "Dashboard" if menu == "Dashboard" else "Content"
-    # --- MAIN PAGE ---
-    if page == "Main":
-        st.header("Welcome to Mood Minder!")
-        st.markdown("Your personal space for happiness and relaxation.")
-        st.markdown("Use the sidebar to navigate through quotes, images, music, and games.")
-    # --- CONTENT PAGES ---
-    elif page == "Content":
-        # --- IMAGES PAGE ---
-        if menu == "📸 Images":
-            st.header("😊 Happy Images")
-            if st.button("Show Random Image"):
-                image = get_random_image()
-                if image:
-                    display_image(image)
-                else:
-                    st.warning("No images found. Please upload some.")
-        # --- MUSIC PAGE ---
-        elif menu == "🎵 Music":
-            st.header("🎶 Random Happy Song")
-            songs = load_songs()
-            if songs and st.button("Play a random song"):
-                song = random.choice(songs)
-                display_song(song)
-            else:
-                st.warning("No songs found. Please upload some.")
-        # --- UPLOAD PAGE ---
-        elif menu == "⬆️ Upload":
-            st.header("📂 Upload New Content")
-            st.warning("Please login to upload content.")
-            # Quotes
-            with st.form("quote_form"):
-                st.subheader("➕ Add a new quote")
-                new_quote = st.text_area("Quote")
-                new_author = st.text_input("Author")
-                submitted = st.form_submit_button("Save Quote")
-                if submitted and new_quote.strip():
-                    save_quote(new_quote.strip(), new_author.strip() if new_author else "Unknown")
-                    st.success("✅ Quote saved successfully!")
-            # Images
-            uploaded_image = st.file_uploader("➕ Upload a happy image", type=["png", "jpg", "jpeg"], key="upload_image")
-            if uploaded_image is not None:
-                if not os.path.exists(IMAGES_FOLDER):
-                    os.makedirs(IMAGES_FOLDER)
-                img_path = os.path.join(IMAGES_FOLDER, uploaded_image.name)
-                with open(img_path, "wb") as f:
-                    f.write(uploaded_image.getbuffer())
-                save_image(uploaded_image.name)
-                st.success(f"✅ Image {uploaded_image.name} uploaded successfully!")
-            # Songs
-            with st.form("song_form"):
-                st.subheader("➕ Upload a happy song")
-                song_title = st.text_input("Song Title")
-                song_artist = st.text_input("Artist")
-                uploaded_song = st.file_uploader("Choose a song file", type=["mp3", "wav"], key="upload_song")
-                submitted = st.form_submit_button("Save Song")
-                if submitted and song_title.strip() and uploaded_song is not None:
-                    if not os.path.exists(MUSIC_FOLDER):
-                        os.makedirs(MUSIC_FOLDER)
-                    song_path = os.path.join(MUSIC_FOLDER, uploaded_song.name)
-                    with open(song_path, "wb") as f:
-                        f.write(uploaded_song.getbuffer())
-                    save_song(song_title.strip(), song_artist.strip() if song_artist else "Unknown", uploaded_song.name)
-                    st.success(f"✅ Song {song_title} uploaded successfully!")
-    # --- DASHBOARD PAGE ---
-    elif page == "Dashboard":
-        if menu == "Dashboard":
-            if current_user:
-                dashboard_view(db, current_user)
-            else:
-                st.warning("Please login to access the dashboard.")
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=True, threaded=True)

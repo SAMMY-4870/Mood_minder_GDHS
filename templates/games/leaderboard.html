@@ -1,51 +1,417 @@
 {% extends 'base.html' %}
 {% block title %}Leaderboard · Games{% endblock %}
-{% block content %}
-<h2 class="mb-4">🏆 Leaderboard</h2>
-<div class="row g-4">
-  <div class="col-md-4">
-    <div class="card h-100">
-      <div class="card-body">
-        <h5 class="card-title">Guess the Number (by Wins)</h5>
-        <ol class="mb-0">
-          {% for row in lb_guess %}
-            <li>{{ row.email }} — {{ row.wins or 0 }} wins</li>
-          {% else %}
-            <li>No data yet.</li>
-          {% endfor %}
-        </ol>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card h-100">
-      <div class="card-body">
-        <h5 class="card-title">Rock · Paper · Scissors (by Wins)</h5>
-        <ol class="mb-0">
-          {% for row in lb_rps %}
-            <li>{{ row.email }} — {{ row.wins or 0 }} wins</li>
-          {% else %}
-            <li>No data yet.</li>
-          {% endfor %}
-        </ol>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card h-100">
-      <div class="card-body">
-        <h5 class="card-title">Trivia (by Correct)</h5>
-        <ol class="mb-0">
-          {% for row in lb_trivia %}
-            <li>{{ row.email }} — {{ row.correct or 0 }} correct</li>
-          {% else %}
-            <li>No data yet.</li>
-          {% endfor %}
-        </ol>
-      </div>
-    </div>
-  </div>
-</div>
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/pages/games.css') }}" rel="stylesheet">
+<style>
+.leaderboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+}
+
+.leaderboard-header h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.leaderboard-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.game-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.game-tab {
+    padding: 12px 25px;
+    border: 2px solid #6f42c1;
+    background: transparent;
+    color: #6f42c1;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.game-tab.active {
+    background: #6f42c1;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.3);
+}
+
+.game-tab:hover {
+    background: #6f42c1;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.leaderboard-content {
+    display: none;
+}
+
+.leaderboard-content.active {
+    display: block;
+}
+
+.leaderboard-table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.leaderboard-table table {
+    width: 100%;
+    margin: 0;
+}
+
+.leaderboard-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+.leaderboard-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f8f9fa;
+    vertical-align: middle;
+}
+
+.leaderboard-table tr:hover {
+    background: #f8f9fa;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-weight: bold;
+    color: white;
+    font-size: 1.1rem;
+}
+
+.rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #333; }
+.rank-2 { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #333; }
+.rank-3 { background: linear-gradient(135deg, #cd7f32, #daa520); color: white; }
+.rank-other { background: linear-gradient(135deg, #6f42c1, #8e44ad); }
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.user-details h6 {
+    margin: 0;
+    font-weight: bold;
+    color: #333;
+}
+
+.user-details small {
+    color: #6c757d;
+}
+
+.score-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #6f42c1;
+}
+
+.score-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.empty-leaderboard {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-leaderboard i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.achievement-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.achievement-badge {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.badge-gold { background: #ffd700; color: #333; }
+.badge-silver { background: #c0c0c0; color: #333; }
+.badge-bronze { background: #cd7f32; color: white; }
+.badge-participant { background: #6f42c1; color: white; }
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 4px solid #6f42c1;
+}
+
+.stat-card h4 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #6f42c1;
+    margin-bottom: 10px;
+}
+
+.stat-card p {
+    color: #6c757d;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .leaderboard-header h1 {
+        font-size: 2rem;
+    }
+    
+    .game-tabs {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .game-tab {
+        width: 200px;
+    }
+    
+    .leaderboard-table {
+        overflow-x: auto;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+}
+</style>
 {% endblock %}
 
+{% block content %}
+<div class="leaderboard-container">
+    <div class="leaderboard-header">
+        <h1>🏆 Leaderboard</h1>
+        <p>See how you rank against other players in different games</p>
+    </div>
+    
+    <div class="game-tabs">
+        <button class="game-tab active" data-game="breathing">🌬️ Breathing</button>
+        <button class="game-tab" data-game="memory">🧠 Memory</button>
+        <button class="game-tab" data-game="reaction">⚡ Reaction</button>
+        <button class="game-tab" data-game="puzzle">🧩 Puzzle</button>
+        <button class="game-tab" data-game="rps">✊ Rock Paper Scissors</button>
+        <button class="game-tab" data-game="guess">🔢 Guess Number</button>
+        <button class="game-tab" data-game="trivia">❓ Trivia</button>
+    </div>
+    
+    {% for game, players in leaderboards.items() %}
+    <div class="leaderboard-content {{ 'active' if loop.first else '' }}" id="leaderboard-{{ game }}">
+        {% if players %}
+        <div class="leaderboard-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Score</th>
+                        <th>Achievements</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                    <tr>
+                        <td>
+                            <div class="rank-badge {{ 'rank-1' if loop.index == 1 else ('rank-2' if loop.index == 2 else ('rank-3' if loop.index == 3 else 'rank-other')) }}">
+                                {{ loop.index }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">
+                                    {{ player.email[0].upper() }}
+                                </div>
+                                <div class="user-details">
+                                    <h6>{{ player.email.split('@')[0] }}</h6>
+                                    <small>{{ player.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="score-value">
+                                {% if game == 'breathing' %}
+                                    {{ player.total_cycles or 0 }} cycles
+                                {% elif game == 'memory' %}
+                                    {{ player.pairs_found or 0 }} pairs
+                                {% elif game == 'reaction' %}
+                                    {{ (player.best_time / 1000)|round(2) if player.best_time else '--' }}s
+                                {% elif game == 'puzzle' %}
+                                    {{ player.total_moves or 0 }} moves
+                                {% elif game == 'rps' %}
+                                    {{ player.wins or 0 }} wins
+                                {% elif game == 'guess' %}
+                                    {{ player.wins or 0 }} wins
+                                {% elif game == 'trivia' %}
+                                    {{ player.correct or 0 }} correct
+                                {% endif %}
+                            </div>
+                            <div class="score-label">
+                                {% if game == 'breathing' %}
+                                    Total Cycles
+                                {% elif game == 'memory' %}
+                                    Pairs Found
+                                {% elif game == 'reaction' %}
+                                    Best Time
+                                {% elif game == 'puzzle' %}
+                                    Total Moves
+                                {% elif game == 'rps' %}
+                                    Total Wins
+                                {% elif game == 'guess' %}
+                                    Total Wins
+                                {% elif game == 'trivia' %}
+                                    Correct Answers
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="achievement-badges">
+                                {% if loop.index == 1 %}
+                                    <span class="achievement-badge badge-gold">🥇 Gold</span>
+                                {% elif loop.index == 2 %}
+                                    <span class="achievement-badge badge-silver">🥈 Silver</span>
+                                {% elif loop.index == 3 %}
+                                    <span class="achievement-badge badge-bronze">🥉 Bronze</span>
+                                {% else %}
+                                    <span class="achievement-badge badge-participant">🏅 Participant</span>
+                                {% endif %}
+                                
+                                {% if game == 'breathing' and (player.total_cycles or 0) >= 100 %}
+                                    <span class="achievement-badge badge-gold">Zen Master</span>
+                                {% elif game == 'memory' and (player.pairs_found or 0) >= 50 %}
+                                    <span class="achievement-badge badge-gold">Memory Champion</span>
+                                {% elif game == 'reaction' and player.best_time and player.best_time < 200 %}
+                                    <span class="achievement-badge badge-gold">Lightning Fast</span>
+                                {% elif game == 'puzzle' and (player.puzzles_completed or 0) >= 20 %}
+                                    <span class="achievement-badge badge-gold">Puzzle Master</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-leaderboard">
+            <i class="fas fa-trophy"></i>
+            <h4>No players yet</h4>
+            <p>Be the first to play {{ game }} and appear on the leaderboard!</p>
+            <a href="{{ url_for('games') }}" class="btn btn-primary">Start Playing</a>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    {% if user %}
+    <div class="stats-summary">
+        <div class="stat-card">
+            <h4>{{ user.get('first_name', 'Player') }}</h4>
+            <p>Welcome back!</p>
+        </div>
+        <div class="stat-card">
+            <h4>{{ leaderboards.values() | map('length') | sum }}</h4>
+            <p>Total Players</p>
+        </div>
+        <div class="stat-card">
+            <h4>{{ leaderboards.keys() | length }}</h4>
+            <p>Games Available</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.game-tab');
+    const contents = document.querySelectorAll('.leaderboard-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const game = this.dataset.game;
+            
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            this.classList.add('active');
+            document.getElementById(`leaderboard-${game}`).classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}
